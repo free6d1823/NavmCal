@@ -1,0 +1,24 @@
+<RCC>
+    <qresource prefix="/">
+        <file>images/open.png</file>
+        <file>images/zoomin.png</file>
+        <file>images/zoomout.png</file>
+        <file>images/save.png</file>
+        <file>images/about.png</file>
+        <file>images/exit.png</file>
+        <file>images/fittowindow.png</file>
+        <file>images/normalsize.png</file>
+        <file>images/copy.png</file>
+        <file>images/paste.png</file>
+        <file>images/ruler.png</file>
+        <file>images/step4.png</file>
+        <file>images/step3.png</file>
+        <file>images/step2.png</file>
+        <file>images/step1.png</file>
+        <file>images/settings.png</file>
+        <file>images/cam4.png</file>
+        <file>images/cam3.png</file>
+        <file>images/cam2.png</file>
+        <file>images/cam1.png</file>
+    </qresource>
+</RCC>
