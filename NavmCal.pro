@@ -25,14 +25,31 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += main.cpp\
         mainwindow.cpp \
     imagewin.cpp \
-    control1.cpp
+    control1.cpp \
+    inifile/inifile.cpp \
+    imglab/Mat.cpp \
+    imglab/ImgProcess.cpp \
+    imglab/vecmath.cpp \
+    control0.cpp \
+    control2.cpp \
+    controlpanel.cpp
 
 HEADERS  += mainwindow.h \
     imagewin.h \
-    control1.h
+    control1.h \
+    inifile/inifile.h \
+    imglab/Mat.h \
+    imglab/ImgProcess.h \
+    imglab/vecmath.h \
+    common.h \
+    control0.h \
+    control2.h \
+    controlpanel.h
 
 FORMS    += mainwindow.ui \
-    control1.ui
+    control1.ui \
+    control0.ui \
+    control2.ui
 
 RESOURCES += \
     images.qrc

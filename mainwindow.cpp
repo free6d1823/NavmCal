@@ -19,72 +19,12 @@
 #include <QDockWidget>
 #include <QListWidget>
 #include <QPlainTextEdit>
+#include "control0.h"
 #include "control1.h"
-
-#define CLIP(X) ( (X) > 255 ? 255 : (X) < 0 ? 0 : X)
-
-
-// YUV -> RGB
-#define C(Y) ( (Y) - 16  )
-#define D(U) ( (U) - 128 )
-#define E(V) ( (V) - 128 )
-
-#define YUV2R(Y, U, V) CLIP(( 298 * C(Y)              + 409 * E(V) + 128) >> 8)
-#define YUV2G(Y, U, V) CLIP(( 298 * C(Y) - 100 * D(U) - 208 * E(V) + 128) >> 8)
-#define YUV2B(Y, U, V) CLIP(( 298 * C(Y) + 516 * D(U)              + 128) >> 8)
-//////
-/// \brief YuyvToRgb32 YUV420 to RGBA 32
-/// \param pYuv
-/// \param width
-/// \param stride
-/// \param height
-/// \param pRgb     output RGB32 buffer
-/// \param uFirst   true if pYuv is YUYV, false if YVYU
-///
-static void YuyvToRgb32(unsigned char* pYuv, int width, int stride, int height, unsigned char* pRgb, bool uFirst)
-{
-    //YVYU - format
-    int nBps = width*4;
-    unsigned char* pY1 = pYuv;
-
-    unsigned char* pV;
-    unsigned char* pU;
-
-    if (uFirst) {
-        pU = pY1+1; pV = pU+2;
-    } else {
-        pV = pY1+1; pU = pV+2;
-    }
-
-
-    unsigned char* pLine1 = pRgb;
-
-    unsigned char y1,u,v;
-    for (int i=0; i<height; i++)
-    {
-        for (int j=0; j<width; j+=2)
-        {
-            y1 = pY1[2*j];
-            u = pU[2*j];
-            v = pV[2*j];
-            pLine1[j*4] = YUV2B(y1, u, v);//b
-            pLine1[j*4+1] = YUV2G(y1, u, v);//g
-            pLine1[j*4+2] = YUV2R(y1, u, v);//r
-            pLine1[j*4+3] = 0xff;
-
-            y1 = pY1[2*j+2];
-            pLine1[j*4+4] = YUV2B(y1, u, v);//b
-            pLine1[j*4+5] = YUV2G(y1, u, v);//g
-            pLine1[j*4+6] = YUV2R(y1, u, v);//r
-            pLine1[j*4+7] = 0xff;
-        }
-        pY1 += stride;
-        pV += stride;
-        pU += stride;
-        pLine1 += nBps;
-
-    }
-}
+#include "control2.h"
+#include "common.h"
+#include "./imglab/ImgProcess.h"
+TexProcess* gpTexProcess=NULL;
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),ui(new Ui::MainWindow),
@@ -97,99 +37,58 @@ MainWindow::MainWindow(QWidget *parent) :
     createMenuAndToolbar();
     createUi();
     resize(QGuiApplication::primaryScreen()->availableSize() * 3 / 5);
-
+    gpTexProcess = NULL;
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
+    if (gpTexProcess){
+        delete gpTexProcess;
+        gpTexProcess = NULL;
+    }
 }
+
 bool MainWindow::loadFile(const QString &fileName)
 {
-    QImageReader reader(fileName);
-    reader.setAutoDetectImageFormat(true);
-    const QImage newImage = reader.read();
-    if (newImage.isNull()) {
+    if (!gpTexProcess) {
+        gpTexProcess = new TexProcess();
+    }
+    if (!gpTexProcess->loadIniFile(fileName.toStdString().c_str()))
+    {
+        delete gpTexProcess;
+        gpTexProcess = NULL;
         QMessageBox::information(this, QGuiApplication::applicationDisplayName(),
-                                 tr("Cannot load %1: %2")
-                                 .arg(QDir::toNativeSeparators(fileName), reader.errorString()));
+                                 tr("Failed to load project file %1!")
+                                 .arg(QDir::toNativeSeparators(fileName)));
+        return false;
+    }
+    nfImage* pImg = gpTexProcess->getSourceImage();
+    if (pImg == NULL){
+        QMessageBox::information(this, QGuiApplication::applicationDisplayName(),
+                                 tr("Failed to load project image specified in project file %1!")
+                                 .arg(QDir::toNativeSeparators(fileName)));
+        return false;
+
+    }
+    QImage* newImage = new QImage(pImg->buffer,
+            pImg->width, pImg->height, QImage::Format_RGBA8888);
+    nfImage::dettach(&pImg);
+
+    if (newImage->isNull()) {
+        QMessageBox::information(this, QGuiApplication::applicationDisplayName(),
+                                 tr("Cannot create image"));
         return false;
     }
 
-    setImage(newImage);
+    setImage(*newImage);
 
     setWindowFilePath(fileName);
 
-    const QString message = tr("Opened \"%1\", %2x%3, Depth: %4")
-        .arg(QDir::toNativeSeparators(fileName)).arg(mImageView->getImage()->width()).arg(mImageView->getImage()->height()).arg(mImageView->getImage()->depth());
+    const QString message = tr("Load file \"%1\", image %2x%3")
+        .arg(QDir::toNativeSeparators(fileName)).arg(newImage->width()).arg(newImage->height());
     statusBar()->showMessage(message);
     return true;
-}
-bool MainWindow::loadFileYuv(const QString & filename, bool isPlanMode)
-{
-
-    QFile fp(filename);
-     if(!fp.open(QIODevice::ReadOnly))
-             return false;
-     //check filename and dimension
-
-    char value[32];
-    const char* pname = filename.toUtf8().data();
-    const char* p1 = strchr(pname, '_');
-    const char* p2 = strchr(pname, '.');
-    int length = p2-p1-1;
-    if (p1 == NULL || p2 == NULL || length <3 || length>= (int) sizeof(value)-1){
-        fp.close();
-
-        QMessageBox::information(this, QGuiApplication::applicationDisplayName(),
-                                 tr("File name must be in the format of abc_widthxheight.yuv!"));
-        return false;
-    }
-
-    memcpy(value, p1+1, length);
-    value[length] = 0;
-    p1 = strchr(value, 'x');
-    if (!p1) {
-        QMessageBox::information(this, QGuiApplication::applicationDisplayName(),
-                                 tr("File name must be in the form of abc_widthxheight.yuv!"));
-        return false;
-    }
-    *(char*) p1 = 0;
-
-    int width = atoi(value);
-    int height = atoi(p1+1);
-
-     unsigned char* m_pRgb32 = (unsigned char*) malloc(width*4*height);
-     if (!m_pRgb32) return false;
-     void* pYuv = malloc(width*2*height);
-     if (!pYuv) {
-         free(m_pRgb32);
-         return false;
-     }
-     QImage* newImage = NULL;
-     if ( fp.read((char* )pYuv, width*2*height) >0){
-         YuyvToRgb32((unsigned char*)pYuv, width, width*2, height,
-                                 m_pRgb32, true);
-         free(pYuv);
-         newImage = new QImage(m_pRgb32,
-                     width, height, QImage::Format_RGBA8888);
-
-     }
-     fp.close();
-     if(newImage) {
-         setImage(*newImage);
-         setWindowFilePath(filename);
-         QString file1 = QDir::toNativeSeparators(filename);
-         QString message = tr("Opened \"%1\", %2x%3, Depth: 32")
-             .arg(file1).arg(width).arg(height);
-         statusBar()->showMessage(message);
-
-     }
-     else {
-              QMessageBox::information(this, QGuiApplication::applicationDisplayName(),
-                                       tr("Failed to read file!"));
-          }
-     return (newImage!=NULL);
 }
 
 void MainWindow::setImage(const QImage &newImage)
@@ -204,12 +103,13 @@ void MainWindow::setImage(const QImage &newImage)
 }
 bool MainWindow::saveFile(const QString &fileName)
 {
-    QImageWriter writer(fileName);
+    if(!gpTexProcess){
 
-    if (!writer.write(*mImageView->getImage())) {
+    }
+    if(!gpTexProcess->saveIniFile(fileName.toStdString().c_str())) {
         QMessageBox::information(this, QGuiApplication::applicationDisplayName(),
-                                 tr("Cannot write %1: %2")
-                                 .arg(QDir::toNativeSeparators(fileName)), writer.errorString());
+                                 tr("Cannot write %1")
+                                 .arg(QDir::toNativeSeparators(fileName)));
         return false;
     }
     const QString message = tr("Wrote \"%1\"").arg(QDir::toNativeSeparators(fileName));
@@ -217,34 +117,13 @@ bool MainWindow::saveFile(const QString &fileName)
     return true;
 }
 
-static void initializeImageFileDialog(QFileDialog &dialog, QFileDialog::AcceptMode acceptMode)
-{
-    static bool firstDialog = true;
 
-    if (firstDialog) {
-        firstDialog = false;
-        const QStringList picturesLocations = QStandardPaths::standardLocations(QStandardPaths::PicturesLocation);
-        dialog.setDirectory(picturesLocations.isEmpty() ? QDir::currentPath() : picturesLocations.last());
-    }
-    QStringList filters;
-    filters << "YUYV packet mode (*.yuv)"
-            << "Image files (*.png *.xpm *.jpg)";
-    dialog.setNameFilters(filters);;
-   if (acceptMode == QFileDialog::AcceptSave)
-        dialog.setDefaultSuffix("jpg");
-}
 void MainWindow::onFileOpen()
 {
-    QString filename = QFileDialog::getOpenFileName(this,tr("Open Imahe"), QDir::currentPath(),
-          tr("YUYV packet mode (*.yuv);;"
-              "Image files (*.png *.xpm *.jpg)") );
+    QString filename = QFileDialog::getOpenFileName(this,tr("Open Project"), QDir::currentPath(),
+          tr("Project setting file (*.ini)") );
 
     if (!filename.isNull()){
-        if(filename.contains(".yuv"))
-            loadFileYuv(filename);
-        else if(filename.contains(".yuyv"))
-            loadFileYuv(filename, false);
-        else
             loadFile(filename);
     }
 
@@ -252,10 +131,12 @@ void MainWindow::onFileOpen()
 
 void MainWindow::onFileSaveAs()
 {
-    QFileDialog dialog(this, tr("Save File As"));
-    initializeImageFileDialog(dialog, QFileDialog::AcceptSave);
+    QString filename = QFileDialog::getSaveFileName(this,tr("Open Project"), QDir::currentPath(),
+          tr("Project setting file (*.ini)") );
 
-    while (dialog.exec() == QDialog::Accepted && !saveFile(dialog.selectedFiles().first())) {}
+    if (!filename.isNull()){
+            saveFile(filename);
+    }
 
 }
 void MainWindow::onFlowStep1()
@@ -264,10 +145,11 @@ void MainWindow::onFlowStep1()
     mStep2Act->setChecked(false);
     mStep3Act->setChecked(false);
     mStep4Act->setChecked(false);
-    mDockView[0]->setVisible(true);
-    mDockView[1]->setVisible(false);
+    mDockView[0]->setVisible(false);
+    mDockView[1]->setVisible(true);
     mDockView[2]->setVisible(false);
     mDockView[3]->setVisible(false);
+    mDockView[4]->setVisible(false);
 
 }
 void MainWindow::onFlowStep2()
@@ -277,9 +159,10 @@ void MainWindow::onFlowStep2()
     mStep3Act->setChecked(false);
     mStep4Act->setChecked(false);
     mDockView[0]->setVisible(false);
-    mDockView[1]->setVisible(true);
-    mDockView[2]->setVisible(false);
+    mDockView[1]->setVisible(false);
+    mDockView[2]->setVisible(true);
     mDockView[3]->setVisible(false);
+    mDockView[4]->setVisible(false);
 }
 void MainWindow::onFlowStep3()
 {
@@ -289,8 +172,9 @@ void MainWindow::onFlowStep3()
     mStep4Act->setChecked(false);
     mDockView[0]->setVisible(false);
     mDockView[1]->setVisible(false);
-    mDockView[2]->setVisible(true);
-    mDockView[3]->setVisible(false);
+    mDockView[2]->setVisible(false);
+    mDockView[3]->setVisible(true);
+    mDockView[4]->setVisible(false);
 }
 void MainWindow::onFlowStep4()
 {
@@ -302,7 +186,8 @@ void MainWindow::onFlowStep4()
     mDockView[0]->setVisible(false);
     mDockView[1]->setVisible(false);
     mDockView[2]->setVisible(false);
-    mDockView[3]->setVisible(true);
+    mDockView[3]->setVisible(false);
+    mDockView[4]->setVisible(true);
 }
 
 void MainWindow::onViewZoomin()
@@ -349,38 +234,44 @@ void MainWindow::createUi()
 {
     setCentralWidget(mImageView);
 
-    mDockView[0] = new QDockWidget(tr("Detect Feature Points"), this);
+    mDockView[0] = new QDockWidget(tr("Welcome"), this);
     mDockView[0]->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
-    Control1* step1Widget = new Control1(mDockView[0]);
-    mDockView[0]->setWidget(step1Widget);
+    Control0* step0Widget = new Control0(mDockView[0]);
+    mDockView[0]->setWidget(step0Widget);
     addDockWidget(Qt::LeftDockWidgetArea, mDockView[0]);
     mDockView[0]->setVisible(true);
 
-    mDockView[1] = new QDockWidget(tr("Fisheye Correction"), this);
+    mDockView[1] = new QDockWidget(tr("Feature Points"), this);
     mDockView[1]->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
-    QLabel * step2Widget = new QLabel(mDockView[1]);
-    step2Widget->setText("Step 2: adjust lens intrinsic parameters and fisheye correction arameters");
-    mDockView[1]->setWidget(step2Widget);
+    Control1 * step1Widget = new Control1(mDockView[1]);
+    mDockView[1]->setWidget(step1Widget);
     addDockWidget(Qt::LeftDockWidgetArea, mDockView[1]);
     mDockView[1]->setVisible(false);
 
-    mDockView[2] = new QDockWidget(tr("Homograph"), this);
+    mDockView[2] = new QDockWidget(tr("FEC"), this);
     mDockView[2]->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
-    QListWidget* step3Widget = new QListWidget(mDockView[2]);
-    step3Widget->addItems(QStringList()
-            << "Check homographic transformation");
-    mDockView[2]->setWidget(step3Widget);
+    Control2* step2Widget = new Control2(mDockView[2]);
+    mDockView[2]->setWidget(step2Widget);
     addDockWidget(Qt::LeftDockWidgetArea, mDockView[2]);
     mDockView[2]->setVisible(false);
 
-    mDockView[3] = new QDockWidget(tr("Stitching"), this);
+    mDockView[3] = new QDockWidget(tr("Homograph"), this);
     mDockView[3]->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    QListWidget* step3Widget = new QListWidget(mDockView[3]);
+    step3Widget->addItems(QStringList()
+            << "Final image");
+    mDockView[3]->setWidget(step3Widget);
+    addDockWidget(Qt::LeftDockWidgetArea, mDockView[3]);
+    mDockView[3]->setVisible(false);
+
+    mDockView[4] = new QDockWidget(tr("Stitching"), this);
+    mDockView[4]->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     QListWidget* step4Widget = new QListWidget(mDockView[3]);
     step4Widget->addItems(QStringList()
             << "Final image");
-    mDockView[3]->setWidget(step4Widget);
-    addDockWidget(Qt::LeftDockWidgetArea, mDockView[3]);
-    mDockView[3]->setVisible(false);
+    mDockView[4]->setWidget(step4Widget);
+    addDockWidget(Qt::LeftDockWidgetArea, mDockView[4]);
+    mDockView[4]->setVisible(false);
 
 }
 
@@ -484,11 +375,11 @@ void MainWindow::createMenuAndToolbar()
 }
 void MainWindow::updateActions()
 {
-    mSaveAsAct->setEnabled(!mImageView->getImage()->isNull());
-    mStep1Act->setEnabled(!mImageView->getImage()->isNull());
-    mStep2Act->setEnabled(!mImageView->getImage()->isNull());
-    mStep3Act->setEnabled(!mImageView->getImage()->isNull());
-    mStep4Act->setEnabled(!mImageView->getImage()->isNull());
+    mSaveAsAct->setEnabled(gpTexProcess);
+    mStep1Act->setEnabled(gpTexProcess);
+    mStep2Act->setEnabled(gpTexProcess);
+    mStep3Act->setEnabled(gpTexProcess);
+    mStep4Act->setEnabled(gpTexProcess);
     mZoomInAct->setEnabled(!mFitToWindowAct->isChecked());
     mZoomOutAct->setEnabled(!mFitToWindowAct->isChecked());
     mNormalSizeAct->setEnabled(!mFitToWindowAct->isChecked());

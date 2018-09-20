@@ -13,7 +13,7 @@ class QScrollBar;
 namespace Ui {
 class MainWindow;
 }
-
+#define MAX_LEFT_PANELS 5
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -22,7 +22,6 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
     bool loadFile(const QString &);
-    bool loadFileYuv(const QString & filename, bool isPlanMode=true);
 
 protected:
     void closeEvent(QCloseEvent *event) override;
@@ -50,7 +49,7 @@ private:
     void adjustScrollBar(QScrollBar *scrollBar, double factor);
 
     Ui::MainWindow *ui;
-    QDockWidget* mDockView[4];
+    QDockWidget* mDockView[MAX_LEFT_PANELS];
     ImageWin *mImageView;
     double mZoomFactor;
     QAction *mSaveAsAct;
