@@ -135,63 +135,17 @@
     <bool>true</bool>
    </property>
   </widget>
-  <widget class="QCheckBox" name="checkBox">
-   <property name="geometry">
-    <rect>
-     <x>20</x>
-     <y>230</y>
-     <width>231</width>
-     <height>23</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Show Feature Points</string>
-   </property>
-  </widget>
   <widget class="QPushButton" name="pushButton">
    <property name="geometry">
     <rect>
-     <x>40</x>
-     <y>270</y>
-     <width>141</width>
+     <x>60</x>
+     <y>520</y>
+     <width>89</width>
      <height>25</height>
     </rect>
    </property>
    <property name="text">
-    <string>Auti Detection</string>
-   </property>
-  </widget>
-  <widget class="QPlainTextEdit" name="plainTextEdit">
-   <property name="geometry">
-    <rect>
-     <x>40</x>
-     <y>360</y>
-     <width>104</width>
-     <height>70</height>
-    </rect>
-   </property>
-  </widget>
-  <widget class="QLineEdit" name="lineEdit">
-   <property name="geometry">
-    <rect>
-     <x>80</x>
-     <y>460</y>
-     <width>113</width>
-     <height>25</height>
-    </rect>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label">
-   <property name="geometry">
-    <rect>
-     <x>80</x>
-     <y>510</y>
-     <width>67</width>
-     <height>17</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>TextLabel</string>
+    <string>PushButton</string>
    </property>
   </widget>
  </widget>

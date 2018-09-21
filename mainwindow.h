@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <QCloseEvent>
+#include "controlpanel.h"
 class QAction;
 
 class QMenu;
@@ -13,7 +14,9 @@ class QScrollBar;
 namespace Ui {
 class MainWindow;
 }
-#define MAX_LEFT_PANELS 5
+
+
+class nfImage;
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -22,13 +25,17 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
     bool loadFile(const QString &);
-
+    void doEnableFlowStep(int id);
+    void changeView(int id);
+    void setImage(nfImage*  pImage);
+    void sendMessage(unsigned int command, long data);
 protected:
     void closeEvent(QCloseEvent *event) override;
 
 private slots:
      void onFileOpen();
      void onFileSaveAs();
+     void onFlowStep0();
      void onFlowStep1();
      void onFlowStep2();
      void onFlowStep3();
@@ -44,23 +51,23 @@ private:
     void createUi();
     void updateActions();
     bool saveFile(const QString &fileName);
-    void setImage(const QImage &newImage);
+
     void scaleImage(double factor);
     void adjustScrollBar(QScrollBar *scrollBar, double factor);
 
     Ui::MainWindow *ui;
-    QDockWidget* mDockView[MAX_LEFT_PANELS];
-    ImageWin *mImageView;
+    QDockWidget* mDockView[ControlPanel::STEP_MAX];
+    ControlPanel* mControlPanel[ControlPanel::STEP_MAX];
+    QAction *mStepsAct[ControlPanel::STEP_MAX];
+    ImageWin *mImageView[ControlPanel::STEP_MAX];
+    int mCurImgViewId;
+
     double mZoomFactor;
     QAction *mSaveAsAct;
     QAction *mZoomInAct;
     QAction *mZoomOutAct;
     QAction *mNormalSizeAct;
     QAction *mFitToWindowAct;
-    QAction *mStep1Act;
-    QAction *mStep2Act;
-    QAction *mStep3Act;
-    QAction *mStep4Act;
 
 };
 

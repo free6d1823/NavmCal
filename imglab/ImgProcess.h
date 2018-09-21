@@ -37,7 +37,7 @@ static nfImage* create(unsigned int w, unsigned int h, unsigned int bpp);
 /// \param bpp
 /// \return the nfImage object
 ///
-static nfImage* ref(unsigned char* data, unsigned int w, unsigned int h, unsigned int bpp);
+static nfImage* ref(unsigned char* data, unsigned int w, unsigned int h, unsigned int stride);
 static void destroy(nfImage** ppImage);
 ///
 /// \brief dettach the buffer from a nfImage object and destroy this object

@@ -7,6 +7,7 @@
 #include <QMouseEvent>
 #include <QPaintEvent>
 #include <QPainter>
+#include <QLabel>
 
 #define RULER_BREADTH 20
 
@@ -94,7 +95,26 @@ private:
   bool mDrawText;
 };
 
-class QLabel;
+
+class nfImage;
+class ImageWin;
+typedef void (*ImageView_PostDraw)(ImageWin* owner, QPainter* painter);
+class ImageView : public QLabel
+{
+    Q_OBJECT
+public:
+    explicit ImageView(QWidget *parent = 0);
+    void setPostDrawCallback(ImageView_PostDraw pFn, ImageWin* owner){
+        m_fpPostDraw = pFn;
+        m_pOwner = owner;
+    }
+    //~ImageView();
+protected:
+    ImageView_PostDraw  m_fpPostDraw;
+    ImageWin* m_pOwner;
+    void paintEvent(QPaintEvent* event);
+};
+
 class ImageWin : public QScrollArea
 {
     Q_OBJECT
@@ -102,26 +122,32 @@ class ImageWin : public QScrollArea
 //    Q_PROPERTY(Qt::Alignment alignment READ alignment WRITE setAlignment)
 
 public:
+static     ImageWin* createImageView(int id, QWidget *parent = 0);
+static void PostDrwCallback(ImageWin* owner, QPainter* painter){
+    owner->onPostDraw(painter);
+}
     explicit ImageWin(QWidget *parent = 0);
     ~ImageWin();
     void scrollContentsBy(int dx, int dy);
     void mouseMoveEvent(QMouseEvent* event);
 
-    void setImage(const QImage &newImage);
-    void adjustSize( );
-    void scaleImage(double factor);
-    QImage* getImage(){ return &mImage;}
+    virtual void setImage(nfImage* pSource);
+    virtual void adjustSize( );
+    virtual void scaleImage(double factor);
+    virtual void processMessage(unsigned int /* command*/, long /*pData*/){}
+    virtual void onPostDraw(QPainter* /*painter*/){}
+ //   QImage* getImage(){ return &mImage;}
     void showRulers(bool bShow);
     bool isRulersShown();
 protected:
-
-private:
+    int mViewType;
+    ImageView *mImageLabel;
+    QImage  mImage;
     QDRuler* mHorzRuler;
     QDRuler* mVertRuler;
     QWidget* mRulerCorner;
 
-    QImage mImage;
-    QLabel *mImageLabel;
+
 };
 
 #endif // IMAGEVWIN_H

@@ -62,6 +62,8 @@ typedef struct _AreaSettings {
     FecParam fec;                   /*!<FEC applied to all area */
     nfFloat2D fpt[FP_COUNTS];         /*!<feature points at final image*/
     nfFloat2D fps[FP_COUNTS];         /*!<feature points at rectified image*/
+    nfFloat2D fpf[FP_COUNTS];         /*!<feature points at fisheye image*/
+
     nfRectF	region[MAX_FP_AREA];      /*!<the normalized coordinates of homo_region on final image*/
     HomoParam homo[MAX_FP_AREA];    /*!<homo apply to selected region */
 }AreaSettings;
@@ -72,6 +74,30 @@ bool    LoadHomoParam(HomoParam* pParam, int nArea, int nFp);
 bool    SaveFecParam(FecParam* pFecParam, int nArea);
 bool    SaveHomoParam(HomoParam* pParam, int nArea, int nFp);
 bool    SaveAreaSettings(AreaSettings* pParam, int nArea);
+
+
+#include "./imglab/ImgProcess.h"
+class TexProcess;
+class MainWindow;
+class nfImage;
+extern TexProcess* gpTexProcess;
+extern MainWindow* gpMainWin;
+extern nfImage* gpInputImage;
+
+/**** ImageView messae ID ****
+    client use these ID to communicate with ImageWin derived class
+    don't care if the ID is not processed
+*/
+
+
+/* inform FpView to set current camera id, pData = 0~3, camera id */
+#define MESSAGE_VIEW_SET_CAMERAID   0x0100
+
+/* inform FpView to show feature points, pData = 0 hide, 1 show */
+#define MESSAGE_VIEW_SHOW_FEATUREPOINTS 0x1000
+/* request FpView do feature points autodetection, pData don't care */
+#define MESSAGE_VIEW_DO_AUTODETECTION   0x1001
+
 
 #endif //NAVMES3_COMMON_H_
 

@@ -2,6 +2,8 @@
 #include <QLabel>
 #include "imagewin.h"
 #include <QGridLayout>
+#include "common.h"
+#include "fpview.h"
 /*******************************************/
 QDRuler::QDRuler(QDRuler::RulerType rulerType, QWidget* parent):
             QWidget(parent), mRulerType(rulerType), mOrigin(0.), mRulerUnit(1.),
@@ -154,14 +156,28 @@ void QDRuler::drawMousePosTick(QPainter* painter)
   }
 }
 /*******************************************/
+ImageView::ImageView(QWidget *parent) : QLabel(parent), m_fpPostDraw(NULL)
+{
+
+}
+void ImageView::paintEvent(QPaintEvent* event)
+{
+    QLabel::paintEvent(event);
+    if(m_fpPostDraw){
+        QPainter painter(this);
+        m_fpPostDraw(m_pOwner, &painter);
+    }
+}
+/*******************************************/
 ImageWin::ImageWin(QWidget *parent) : QScrollArea(parent),
-    mImageLabel(new QLabel)
+    mImageLabel(new ImageView)
 {
 
     mImageLabel->setBackgroundRole(QPalette::Base);
     mImageLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
     mImageLabel->setScaledContents(true);
-
+    mImageLabel->setPixmap(QPixmap(":/images/cam1.png"));
+    mImageLabel->setPostDrawCallback(ImageWin::PostDrwCallback, this);
     setBackgroundRole(QPalette::Dark);
     setWidget(mImageLabel);
 
@@ -184,7 +200,7 @@ ImageWin::ImageWin(QWidget *parent) : QScrollArea(parent),
     this->setLayout(gridLayout);
 
 
-    setVisible(false);
+    setVisible(true);
     setMouseTracking(true);//capture mouse event and trigger draw event
 }
 
@@ -222,9 +238,12 @@ void ImageWin::scrollContentsBy(int dx, int dy)
     mVertRuler->setOrigin(mVertRuler->origin()+dy);
 }
 
-void ImageWin::setImage(const QImage &newImage)
+void ImageWin::setImage(nfImage*  pSource)
 {
-    mImage = newImage;
+    mImage =
+        QImage(pSource->buffer,
+            pSource->width, pSource->height, QImage::Format_RGBA8888);
+
     mImageLabel->setPixmap(QPixmap::fromImage(mImage));
     setVisible(true);
 }
@@ -239,4 +258,26 @@ void ImageWin::scaleImage(double factor)
     mHorzRuler->setRulerZoom(factor);
     mVertRuler->setRulerZoom(factor);
 
+}
+ImageWin* ImageWin::createImageView(int id, QWidget *parent)
+{
+    ImageWin* pWin = NULL;
+    switch (id) {
+    case 1:
+        pWin = (ImageWin*) new FpView(parent);
+        break;
+    case 2:
+        pWin = (ImageWin*) new FecView(parent);
+        break;
+    case 3:
+        pWin = (ImageWin*) new HomoView(parent);
+        break;
+    case 4:
+        pWin = (ImageWin*) new AllView(parent);
+        break;
+    default:
+        pWin = (ImageWin*) new SourceView(parent);
+        break;
+    }
+    return pWin;
 }

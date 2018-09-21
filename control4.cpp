@@ -1,29 +1,29 @@
 #include "controlpanel.h"
-#include "ui_control2.h"
+#include "ui_control4.h"
 #include "mainwindow.h"
 #include "common.h"
-Control2::Control2(TYPE id,QWidget *parent) :
+Control4::Control4(TYPE id,QWidget *parent) :
     ControlPanel(id, parent),
-    ui(new Ui::Control2)
+    ui(new Ui::Control4)
 {
     ui->setupUi(this);
 }
 
-Control2::~Control2()
+Control4::~Control4()
 {
     delete ui;
 }
 ///
 /// \brief start to prepare things when this step is started
 ///
-void Control2::start()
+void Control4::start()
 {
     gpMainWin->changeView(mId);
 }
 ///
 /// \brief stop to do things before this step is fnished
 ///
-void Control2::stop()
+void Control4::stop()
 {
 
 }

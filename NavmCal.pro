@@ -32,24 +32,27 @@ SOURCES += main.cpp\
     imglab/vecmath.cpp \
     control0.cpp \
     control2.cpp \
-    controlpanel.cpp
+    controlpanel.cpp \
+    control3.cpp \
+    control4.cpp \
+    fpview.cpp
 
 HEADERS  += mainwindow.h \
     imagewin.h \
-    control1.h \
     inifile/inifile.h \
     imglab/Mat.h \
     imglab/ImgProcess.h \
     imglab/vecmath.h \
     common.h \
-    control0.h \
-    control2.h \
-    controlpanel.h
+    controlpanel.h \
+    fpview.h
 
 FORMS    += mainwindow.ui \
     control1.ui \
     control0.ui \
-    control2.ui
+    control2.ui \
+    control3.ui \
+    control4.ui
 
 RESOURCES += \
     images.qrc

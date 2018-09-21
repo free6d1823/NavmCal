@@ -100,7 +100,7 @@ nfImage* nfImage::create(unsigned int w, unsigned int h, unsigned int bpp)
 //    printf ("nfInitImage#%d (%dx%d)\n", img->seq, w, h);
     return img;
 }
-nfImage* nfImage::ref(unsigned char* data, unsigned int w, unsigned int h, unsigned int bpp)
+nfImage* nfImage::ref(unsigned char* data, unsigned int w, unsigned int h, unsigned int stride)
 {
     nfImage* img =  new nfImage;
     if (!img)
@@ -108,7 +108,7 @@ nfImage* nfImage::ref(unsigned char* data, unsigned int w, unsigned int h, unsig
 
     img->buffer = data;
     img->width = w;
-    img->stride = w*bpp;
+    img->stride = stride;
     img->height = h;
     img->bRef = true;
 //    printf ("nfRefImage#%d (%dx%d)\n", img->seq, w, h);
@@ -487,6 +487,10 @@ bool    LoadAreaSettings(AreaSettings* pParam, int nArea, const char* iniFile)
         if(!GetProfilePointFloat(section, key, &pParam->fps[i], iniFile)){
             fprintf(stderr, "[%s] %s value not found!\n", section, key);
         }
+        sprintf(key, "fpf_%d", i);
+        if(!GetProfilePointFloat(section, key, &pParam->fpf[i], iniFile)){
+            fprintf(stderr, "[%s] %s value not found!\n", section, key);
+        }
     }
     LoadFecParam(&pParam->fec, nArea, iniFile);
     for (int i=0; i< MAX_FP_AREA; i++) {
@@ -557,6 +561,9 @@ bool    SaveAreaSettings(AreaSettings* pParam, int nArea, const char* iniFile)
             return false;
         sprintf(key, "fps_%d", i);
         if(!WriteProfilePointFloat(section, key, &pParam->fps[i], iniFile))
+            return false;
+        sprintf(key, "fpf_%d", i);
+        if(!WriteProfilePointFloat(section, key, &pParam->fpf[i], iniFile))
             return false;
     }
 

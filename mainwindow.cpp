@@ -19,25 +19,30 @@
 #include <QDockWidget>
 #include <QListWidget>
 #include <QPlainTextEdit>
-#include "control0.h"
-#include "control1.h"
-#include "control2.h"
+#include "controlpanel.h"
 #include "common.h"
 #include "./imglab/ImgProcess.h"
+#include "fpview.h"
+
 TexProcess* gpTexProcess=NULL;
+MainWindow* gpMainWin = NULL;
+nfImage* gpInputImage = NULL;
 
 MainWindow::MainWindow(QWidget *parent) :
-    QMainWindow(parent),ui(new Ui::MainWindow),
-    mImageView(new ImageWin),
+    QMainWindow(parent),ui(new Ui::MainWindow),    
     mZoomFactor(1)
 {
     ui->setupUi(this);
-
-
+    mCurImgViewId = -1;
+    for (int i=0; i< ControlPanel::STEP_MAX; i++)
+        mImageView[i] = NULL;
+    gpInputImage = NULL; /* input 4-cam image */
     createMenuAndToolbar();
     createUi();
     resize(QGuiApplication::primaryScreen()->availableSize() * 3 / 5);
     gpTexProcess = NULL;
+    gpMainWin = this;
+    doEnableFlowStep(0);
 }
 
 MainWindow::~MainWindow()
@@ -46,6 +51,16 @@ MainWindow::~MainWindow()
     if (gpTexProcess){
         delete gpTexProcess;
         gpTexProcess = NULL;
+    }
+}
+/* called by Controlx->start() */
+void MainWindow::changeView(int id)
+{
+    if (id != mCurImgViewId){
+        mImageView[id] = ImageWin::createImageView(id);
+        setCentralWidget(mImageView[id]);//old one will be killed by Qt
+        mCurImgViewId = id;
+         mImageView[mCurImgViewId]->setVisible(true);
     }
 }
 
@@ -71,35 +86,33 @@ bool MainWindow::loadFile(const QString &fileName)
         return false;
 
     }
-    QImage* newImage = new QImage(pImg->buffer,
-            pImg->width, pImg->height, QImage::Format_RGBA8888);
-    nfImage::dettach(&pImg);
-
-    if (newImage->isNull()) {
-        QMessageBox::information(this, QGuiApplication::applicationDisplayName(),
-                                 tr("Cannot create image"));
-        return false;
+    if (gpInputImage)
+    {
+        nfImage::destroy(&gpInputImage);
     }
+    gpInputImage = pImg;
 
-    setImage(*newImage);
 
     setWindowFilePath(fileName);
-
-    const QString message = tr("Load file \"%1\", image %2x%3")
-        .arg(QDir::toNativeSeparators(fileName)).arg(newImage->width()).arg(newImage->height());
-    statusBar()->showMessage(message);
+    if (gpInputImage) {
+        const QString message = tr("Load file \"%1\", image %2x%3")
+            .arg(QDir::toNativeSeparators(fileName)).arg(gpInputImage->width).arg(gpInputImage->height);
+        statusBar()->showMessage(message);
+    }
     return true;
 }
 
-void MainWindow::setImage(const QImage &newImage)
+void MainWindow::setImage(nfImage*  pImage)
 {
-    mZoomFactor = 1.0;
-    mImageView->setImage(newImage);
-    mFitToWindowAct->setEnabled(true);
-    updateActions();
+    if( mImageView[mCurImgViewId]) {
+        mZoomFactor = 1.0;
+        mImageView[mCurImgViewId]->setImage(pImage);
+        mFitToWindowAct->setEnabled(true);
+        updateActions();
 
-    if (!mFitToWindowAct->isChecked())
-        mImageView->adjustSize();
+        if (!mFitToWindowAct->isChecked())
+             mImageView[mCurImgViewId]->adjustSize();
+    }
 }
 bool MainWindow::saveFile(const QString &fileName)
 {
@@ -124,7 +137,9 @@ void MainWindow::onFileOpen()
           tr("Project setting file (*.ini)") );
 
     if (!filename.isNull()){
-            loadFile(filename);
+        loadFile(filename);
+        //reset steps to step0
+        doEnableFlowStep(0);
     }
 
 }
@@ -139,56 +154,19 @@ void MainWindow::onFileSaveAs()
     }
 
 }
-void MainWindow::onFlowStep1()
+void MainWindow::doEnableFlowStep(int id)
 {
-    mStep1Act->setChecked(true);
-    mStep2Act->setChecked(false);
-    mStep3Act->setChecked(false);
-    mStep4Act->setChecked(false);
-    mDockView[0]->setVisible(false);
-    mDockView[1]->setVisible(true);
-    mDockView[2]->setVisible(false);
-    mDockView[3]->setVisible(false);
-    mDockView[4]->setVisible(false);
-
+    mControlPanel[id]->start();
+    for (int i=0; i< ControlPanel::STEP_MAX; i++){
+        mStepsAct[i]->setChecked(i==id);
+        mDockView[i]->setVisible(i==id);
+    }
 }
-void MainWindow::onFlowStep2()
-{
-    mStep1Act->setChecked(false);
-    mStep2Act->setChecked(true);
-    mStep3Act->setChecked(false);
-    mStep4Act->setChecked(false);
-    mDockView[0]->setVisible(false);
-    mDockView[1]->setVisible(false);
-    mDockView[2]->setVisible(true);
-    mDockView[3]->setVisible(false);
-    mDockView[4]->setVisible(false);
-}
-void MainWindow::onFlowStep3()
-{
-    mStep1Act->setChecked(false);
-    mStep2Act->setChecked(false);
-    mStep3Act->setChecked(true);
-    mStep4Act->setChecked(false);
-    mDockView[0]->setVisible(false);
-    mDockView[1]->setVisible(false);
-    mDockView[2]->setVisible(false);
-    mDockView[3]->setVisible(true);
-    mDockView[4]->setVisible(false);
-}
-void MainWindow::onFlowStep4()
-{
-    mStep1Act->setChecked(false);
-    mStep2Act->setChecked(false);
-    mStep3Act->setChecked(false);
-    mStep4Act->setChecked(true);
-
-    mDockView[0]->setVisible(false);
-    mDockView[1]->setVisible(false);
-    mDockView[2]->setVisible(false);
-    mDockView[3]->setVisible(false);
-    mDockView[4]->setVisible(true);
-}
+void MainWindow::onFlowStep0(){doEnableFlowStep(0);}
+void MainWindow::onFlowStep1(){doEnableFlowStep(1);}
+void MainWindow::onFlowStep2(){doEnableFlowStep(2);}
+void MainWindow::onFlowStep3(){doEnableFlowStep(3);}
+void MainWindow::onFlowStep4(){doEnableFlowStep(4);}
 
 void MainWindow::onViewZoomin()
 {
@@ -202,21 +180,21 @@ void MainWindow::onViewZoomout()
 
 void MainWindow::onViewNormalSize()
 {
-    mImageView->adjustSize();
+     mImageView[mCurImgViewId]->adjustSize();
     mZoomFactor = 1.0;
 }
 
 void MainWindow::onViewFitToWindow()
 {
     bool fitToWindow = mFitToWindowAct->isChecked();
-    mImageView->setWidgetResizable(fitToWindow);
+     mImageView[mCurImgViewId]->setWidgetResizable(fitToWindow);
     if (!fitToWindow)
         onViewNormalSize();
     updateActions();
 }
 void MainWindow::onViewShowRuler()
 {
-    mImageView->showRulers(!mImageView->isRulersShown());
+     mImageView[mCurImgViewId]->showRulers(! mImageView[mCurImgViewId]->isRulersShown());
 }
 
 void MainWindow::onHelpAbout()
@@ -232,46 +210,22 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
 void MainWindow::createUi()
 {
-    setCentralWidget(mImageView);
 
     mDockView[0] = new QDockWidget(tr("Welcome"), this);
     mDockView[0]->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
-    Control0* step0Widget = new Control0(mDockView[0]);
-    mDockView[0]->setWidget(step0Widget);
+    mControlPanel[0] = ControlPanel::create(ControlPanel::STEP_0, mDockView[0]);
+    mDockView[0]->setWidget(mControlPanel[0]);
     addDockWidget(Qt::LeftDockWidgetArea, mDockView[0]);
     mDockView[0]->setVisible(true);
 
-    mDockView[1] = new QDockWidget(tr("Feature Points"), this);
-    mDockView[1]->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
-    Control1 * step1Widget = new Control1(mDockView[1]);
-    mDockView[1]->setWidget(step1Widget);
-    addDockWidget(Qt::LeftDockWidgetArea, mDockView[1]);
-    mDockView[1]->setVisible(false);
-
-    mDockView[2] = new QDockWidget(tr("FEC"), this);
-    mDockView[2]->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
-    Control2* step2Widget = new Control2(mDockView[2]);
-    mDockView[2]->setWidget(step2Widget);
-    addDockWidget(Qt::LeftDockWidgetArea, mDockView[2]);
-    mDockView[2]->setVisible(false);
-
-    mDockView[3] = new QDockWidget(tr("Homograph"), this);
-    mDockView[3]->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
-    QListWidget* step3Widget = new QListWidget(mDockView[3]);
-    step3Widget->addItems(QStringList()
-            << "Final image");
-    mDockView[3]->setWidget(step3Widget);
-    addDockWidget(Qt::LeftDockWidgetArea, mDockView[3]);
-    mDockView[3]->setVisible(false);
-
-    mDockView[4] = new QDockWidget(tr("Stitching"), this);
-    mDockView[4]->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
-    QListWidget* step4Widget = new QListWidget(mDockView[3]);
-    step4Widget->addItems(QStringList()
-            << "Final image");
-    mDockView[4]->setWidget(step4Widget);
-    addDockWidget(Qt::LeftDockWidgetArea, mDockView[4]);
-    mDockView[4]->setVisible(false);
+    for (int i=1; i< ControlPanel::STEP_MAX; i++) {
+        mDockView[i] = new QDockWidget(tr("%1").arg(i), this);
+        mDockView[i]->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+        mControlPanel[i] = ControlPanel::create((ControlPanel::TYPE)i, mDockView[i]);
+        mDockView[i]->setWidget(mControlPanel[i]);
+        addDockWidget(Qt::LeftDockWidgetArea, mDockView[i]);
+        mDockView[i]->setVisible(false);
+    }
 
 }
 
@@ -299,29 +253,36 @@ void MainWindow::createMenuAndToolbar()
     /*******************************************/
     QMenu *flowMenu = ui->menuBar->addMenu(tr("&Flow"));
     const QIcon step1Icon =  QIcon(":/images/step1.png");
-    mStep1Act = flowMenu->addAction(step1Icon, tr("Step &1"), this,
+    mStepsAct[1] = flowMenu->addAction(step1Icon, tr("Step &1"), this,
                          SLOT(onFlowStep1()),tr("Ctrl+1"));
-    mStep1Act->setEnabled(false);
-    mStep1Act->setCheckable(true);
+    mStepsAct[1] ->setEnabled(false);
+    mStepsAct[1] ->setCheckable(true);
+
     const QIcon step2Icon =  QIcon(":/images/step2.png");
-    mStep2Act = flowMenu->addAction(step2Icon, tr("Step &2"), this,
+    mStepsAct[2]  = flowMenu->addAction(step2Icon, tr("Step &2"), this,
                          SLOT(onFlowStep2()),tr("Ctrl+2"));
-    mStep2Act->setEnabled(false);
-    mStep2Act->setCheckable(true);
+    mStepsAct[2]->setEnabled(false);
+    mStepsAct[2]->setCheckable(true);
     const QIcon step3Icon =  QIcon(":/images/step3.png");
-    mStep3Act = flowMenu->addAction(step3Icon, tr("Step &3"), this,
+    mStepsAct[3] = flowMenu->addAction(step3Icon, tr("Step &3"), this,
                          SLOT(onFlowStep3()),tr("Ctrl+3"));
-    mStep3Act->setEnabled(false);
-    mStep3Act->setCheckable(true);
+    mStepsAct[3]->setEnabled(false);
+    mStepsAct[3]->setCheckable(true);
     const QIcon step4Icon =  QIcon(":/images/step4.png");
-    mStep4Act = flowMenu->addAction(step4Icon, tr("Step &4"), this,
+    mStepsAct[4] = flowMenu->addAction(step4Icon, tr("Step &4"), this,
                          SLOT(onFlowStep4()),tr("Ctrl+4"));
-    mStep4Act->setEnabled(false);
-    mStep4Act->setCheckable(true);
-    fileToolBar->addAction(mStep1Act);
-    fileToolBar->addAction(mStep2Act);
-    fileToolBar->addAction(mStep3Act);
-    fileToolBar->addAction(mStep4Act);
+    mStepsAct[4]->setEnabled(false);
+    mStepsAct[4]->setCheckable(true);
+
+    mStepsAct[0] = flowMenu->addAction(tr("Resume"), this,
+                         SLOT(onFlowStep0()),tr("Ctrl+0"));
+    mStepsAct[0] ->setEnabled(true);
+    mStepsAct[0] ->setCheckable(true);
+
+    fileToolBar->addAction(mStepsAct[1]);
+    fileToolBar->addAction(mStepsAct[2]);
+    fileToolBar->addAction(mStepsAct[3]);
+    fileToolBar->addAction(mStepsAct[4]);
     fileToolBar->addSeparator();
     /*******************************************/
     QMenu* viewMenu = ui->menuBar->addMenu(tr("&View"));
@@ -376,22 +337,19 @@ void MainWindow::createMenuAndToolbar()
 void MainWindow::updateActions()
 {
     mSaveAsAct->setEnabled(gpTexProcess);
-    mStep1Act->setEnabled(gpTexProcess);
-    mStep2Act->setEnabled(gpTexProcess);
-    mStep3Act->setEnabled(gpTexProcess);
-    mStep4Act->setEnabled(gpTexProcess);
+    for (int i=1; i< ControlPanel::STEP_MAX; i++)
+        mStepsAct[i]->setEnabled(gpTexProcess!= NULL);
+
     mZoomInAct->setEnabled(!mFitToWindowAct->isChecked());
     mZoomOutAct->setEnabled(!mFitToWindowAct->isChecked());
     mNormalSizeAct->setEnabled(!mFitToWindowAct->isChecked());
 }
 void MainWindow::scaleImage(double factor)
 {
-//    Q_ASSERT(mImageLabel->pixmap());
     mZoomFactor *= factor;
- //   mImageLabel->resize(mZoomFactor * mImageLabel->pixmap()->size());
-    mImageView->scaleImage(mZoomFactor);
-    adjustScrollBar(mImageView->horizontalScrollBar(), factor);
-    adjustScrollBar(mImageView->verticalScrollBar(), factor);
+    mImageView[mCurImgViewId]->scaleImage(mZoomFactor);
+    adjustScrollBar( mImageView[mCurImgViewId]->horizontalScrollBar(), factor);
+    adjustScrollBar( mImageView[mCurImgViewId]->verticalScrollBar(), factor);
 
     mZoomInAct->setEnabled(mZoomFactor < 10.0);
     mZoomOutAct->setEnabled(mZoomFactor > 0.1);
@@ -402,3 +360,6 @@ void MainWindow::adjustScrollBar(QScrollBar *scrollBar, double factor)
                             + ((factor - 1) * scrollBar->pageStep()/2)));
 }
 
+void MainWindow::sendMessage(unsigned int command, long  data){
+    mImageView[mCurImgViewId]->processMessage(command, data);
+}
