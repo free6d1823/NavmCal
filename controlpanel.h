@@ -111,7 +111,14 @@ public:
     /// \brief stop to do things before this step is fnished
     ///
     virtual void stop();
+public slots:
+    void onCamera0();
+    void onCamera1();
+    void onCamera2();
+    void onCamera3();
 private:
+    void loadCamera(int cam);
+    void createUi();
     Ui::Control2 *ui;
 };
 ///////////////////////////////////////////////////////////
@@ -135,7 +142,14 @@ public:
     /// \brief stop to do things before this step is fnished
     ///
     virtual void stop();
+public slots:
+    void onCamera0();
+    void onCamera1();
+    void onCamera2();
+    void onCamera3();
 private:
+    void loadCamera(int cam);
+    void createUi();
     Ui::Control3 *ui;
 };
 ///////////////////////////////////////////////////////////

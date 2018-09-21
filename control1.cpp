@@ -35,7 +35,7 @@ void Control1::createUi()
 /// \param nCamId
 /// \return
 ///
-nfImage* LoadImagebyArea(int nCamId)
+static nfImage* LoadImagebyArea(int nCamId)
 {
     if(!gpInputImage)
         return NULL;
