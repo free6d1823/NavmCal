@@ -163,6 +163,8 @@ public slots:
     void onCamera1();
     void onCamera2();
     void onCamera3();
+    void onShowFp(bool show);
+    void onShowGrideLines(bool show);
 private:
     void loadCamera(int cam);
     void createUi();
@@ -189,7 +191,15 @@ public:
     /// \brief stop to do things before this step is fnished
     ///
     virtual void stop();
+public slots:
+    void onSave();
+    void onShowCam0(bool show);
+    void onShowCam1(bool show);
+    void onShowCam2(bool show);
+    void onShowCam3(bool show);
+
 private:
     Ui::Control4 *ui;
+
 };
 #endif // CONTROLPANEL_H

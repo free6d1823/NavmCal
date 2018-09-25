@@ -32,7 +32,7 @@ public:
 protected:
     void closeEvent(QCloseEvent *event) override;
 
-private slots:
+public slots:
      void onFileOpen();
      void onFileSaveAs();
      void onFlowStep0();

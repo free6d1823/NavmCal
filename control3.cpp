@@ -21,6 +21,9 @@ void Control3::createUi()
     connect(ui->rightCam, SIGNAL(clicked()), SLOT(onCamera1()));
     connect(ui->rearCam, SIGNAL(clicked()), SLOT(onCamera2()));
     connect(ui->leftCam, SIGNAL(clicked()), SLOT(onCamera3()));
+    connect(ui->checkShowFp, SIGNAL(toggled(bool)), SLOT(onShowFp(bool)));
+    connect(ui->checkShowGrideLines, SIGNAL(toggled(bool)), SLOT(onShowGrideLines(bool)));
+
 }
 static nfImage* LoadImagebyArea(int nCamId)
 {
@@ -93,6 +96,17 @@ void Control3::onCamera3(){
     ui->rearCam->setChecked(false);
     ui->leftCam->setChecked(true);
     loadCamera(3);
+}
+void Control3::onShowFp(bool show)
+{
+    gpMainWin->sendMessage(MESSAGE_VIEW_SHOW_FEATUREPOINTS, (show?1:0));
+
+}
+
+void Control3::onShowGrideLines(bool show)
+{
+    gpMainWin->sendMessage(MESSAGE_VIEW_SHOW_GRIDELINES, (show?1:0));
+
 }
 ///
 /// \brief start to prepare things when this step is started

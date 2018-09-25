@@ -135,6 +135,32 @@
     <bool>true</bool>
    </property>
   </widget>
+  <widget class="QCheckBox" name="checkShowGrideLines">
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>230</y>
+     <width>181</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Show gride lines</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="checkShowFp">
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>200</y>
+     <width>181</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Show feature points</string>
+   </property>
+  </widget>
  </widget>
  <resources>
   <include location="images.qrc"/>

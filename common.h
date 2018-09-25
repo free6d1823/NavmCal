@@ -60,10 +60,11 @@ typedef struct _HomoParam{
 typedef struct _AreaSettings {
     nfRectF  range;                  /*!<the coordinates on final normalized image, 1.0x1.0 of this area  */
     FecParam fec;                   /*!<FEC applied to all area */
+    int nFpCounts;                  /*!<numbers of feature points in this camera, le. than  FP_COUNTS*/
     nfFloat2D fpt[FP_COUNTS];         /*!<feature points at final image*/
     nfFloat2D fps[FP_COUNTS];         /*!<feature points at rectified image*/
     nfFloat2D fpf[FP_COUNTS];         /*!<feature points at fisheye image*/
-
+    int nFpAreaCounts;                /*!<numbers of FP areas in this camera, l.e. than MAX_FP_AREA*/
     nfRectF	region[MAX_FP_AREA];      /*!<the normalized coordinates of homo_region on final image*/
     HomoParam homo[MAX_FP_AREA];    /*!<homo apply to selected region */
 }AreaSettings;
@@ -101,6 +102,18 @@ extern nfImage* gpInputImage;
 #define MESSAGE_VIEW_UPDATE_FEC   0x1010
 /* inform FecView to show feature points, pData = 0 hide, 1 show */
 #define MESSAGE_VIEW_SHOW_GRIDELINES 0x1011
+/* inform AllView to show camera 0 image (front),   pData = 0 hide, 1 show */
+#define MESSAGE_VIEW_SHOW_CAMERA0 0x1020
+/* inform AllView to show camera 1 image (right),   pData = 0 hide, 1 show */
+#define MESSAGE_VIEW_SHOW_CAMERA1 0x1021
+/* inform AllView to show camera 2 image (rear),   pData = 0 hide, 1 show */
+#define MESSAGE_VIEW_SHOW_CAMERA2 0x1022
+/* inform AllView to show camera 3 image (left),   pData = 0 hide, 1 show */
+#define MESSAGE_VIEW_SHOW_CAMERA3 0x1023
+
+/* inform AllView to stitch all camera images */
+#define MESSAGE_VIEW_DO_STITCHING 0x1024
+
 
 
 #endif //NAVMES3_COMMON_H_

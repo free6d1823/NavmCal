@@ -68,11 +68,19 @@ public:
     explicit HomoView(QWidget *parent = 0);
     ~HomoView();
     virtual void processMessage(unsigned int command, long data);
+    virtual void onPostDraw(QPainter* painter);
+    /*<! handle image be FecView itself */
+    virtual void setImage(nfImage* pSource);
 signals:
 
 public slots:
 private:
-    int mCamId;
+    void loadFps();
+    /*<! apply FEC parameters and update ImageView */
+    void udateImage();    int mCamId;
+    bool mShowFp;
+    nfImage* mpSourceImage;
+    vector <nfFloat2D> mFpsList;
 };
 class AllView : public ImageWin
 {
@@ -80,8 +88,12 @@ class AllView : public ImageWin
 public:
     explicit AllView(QWidget *parent = 0);
     ~AllView();
+    virtual void processMessage(unsigned int command, long data);
+
 signals:
 
-public slots:
+private:
+    void udateImage();
+    bool mShowCam[4];
 };
 #endif // FPVIEW_H

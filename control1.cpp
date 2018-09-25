@@ -31,7 +31,7 @@ void Control1::createUi()
  *   left(3)  | rear(2)  |
  */
 ///
-/// \brief LoadImagebyArea reate an image of the camera
+/// \brief LoadImagebyArea create an image of the camera, duplicate buffer
 /// \param nCamId
 /// \return
 ///

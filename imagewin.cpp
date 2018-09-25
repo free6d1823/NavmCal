@@ -176,7 +176,7 @@ ImageWin::ImageWin(QWidget *parent) : QScrollArea(parent),
     mImageLabel->setBackgroundRole(QPalette::Base);
     mImageLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
     mImageLabel->setScaledContents(true);
-    mImageLabel->setPixmap(QPixmap(":/images/cam1.png"));
+    //mImageLabel->setPixmap(QPixmap(":/images/cam1.png"));
     mImageLabel->setPostDrawCallback(ImageWin::PostDrwCallback, this);
     setBackgroundRole(QPalette::Dark);
     setWidget(mImageLabel);
