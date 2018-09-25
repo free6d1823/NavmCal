@@ -192,6 +192,8 @@ void FecView::processMessage(unsigned int command, long data)
         udateImage();
         if(mShowFp)
             loadFps();
+        if(mShowGrideLines)
+            mCenter = gpTexProcess->mAreaSettings[mCamId].fec.ptCenter;
         mImageLabel->update();
         break;
     case MESSAGE_VIEW_SHOW_FEATUREPOINTS:
@@ -208,6 +210,7 @@ void FecView::processMessage(unsigned int command, long data)
             mShowGrideLines = false;
         }else {
             mShowGrideLines = true;
+            mCenter = gpTexProcess->mAreaSettings[mCamId].fec.ptCenter;
         }
         mImageLabel->update();
         break;
@@ -242,6 +245,22 @@ void FecView::loadFps()
 void FecView::onPostDraw(QPainter* painter)
 {
     QRect rcTarget = mImageLabel->rect();
+    if(mShowGrideLines) {
+        QPen pen1;
+        pen1.setWidth(1);
+        pen1.setColor(Qt::blue);
+        painter->setPen(pen1);
+
+        QPointF pt1, pt2;
+        pt1.setX(0); pt1.setY(mCenter.y * rcTarget.height());
+        pt2.setX(rcTarget.width()); pt2.setY(pt1.y());
+        painter->drawLine(pt1,pt2);
+        pt1.setY(0); pt1.setX(mCenter.x * rcTarget.width());
+        pt2.setY(rcTarget.height()); pt2.setX(pt1.x());
+        painter->drawLine(pt1,pt2);
+
+
+    }
     if(mShowFp) {
         vector <QPointF> fps;
         QPointF pt;
@@ -266,7 +285,7 @@ void FecView::onPostDraw(QPainter* painter)
  * ==========================================================
  */
 HomoView::HomoView(QWidget *parent) : ImageWin(parent),
-    mShowFp(false),
+    mShowFp(false),mShowGrideLines(false),
     mpSourceImage(NULL)
 {
     mCamId = 0;
@@ -358,6 +377,8 @@ void HomoView::processMessage(unsigned int command, long data)
         udateImage();
         if(mShowFp)
             loadFps();
+        if(mShowGrideLines)
+            loadRegions();
         mImageLabel->update();
         break;
     case MESSAGE_VIEW_SHOW_FEATUREPOINTS:
@@ -369,6 +390,16 @@ void HomoView::processMessage(unsigned int command, long data)
         }
         mImageLabel->update();
         break;
+    case MESSAGE_VIEW_SHOW_GRIDELINES:
+        if(data == 0) {
+            mShowGrideLines = false;
+        }else {
+            mShowGrideLines = true;
+            loadRegions();
+        }
+        mImageLabel->update();
+        break;
+
     default:
         break;
     }
@@ -383,9 +414,34 @@ void HomoView::loadFps()
         }
     }
 }
+void HomoView::loadRegions()
+{
+    if(gpTexProcess && mCamId >=0 && mCamId <MAX_CAMERAS){
+        AreaSettings* pAs = & gpTexProcess->mAreaSettings[mCamId];
+        mRegionList.clear();
+        for (int i=0; i<pAs->nFpAreaCounts; i++){
+            mRegionList.push_back(pAs->region[i]);
+        }
+    }
+}
+
 void HomoView::onPostDraw(QPainter* painter)
 {
     QRect rcTarget = mImageLabel->rect();
+    if(mShowGrideLines) {
+        QPen pen1(Qt::blue);
+        pen1.setWidth(1);
+        painter->setPen(pen1);
+        QRectF r;
+        for (unsigned int i=0; i<mRegionList.size(); i++){
+            r.setLeft(mRegionList[i].l* rcTarget.width());
+            r.setTop(mRegionList[i].t* rcTarget.width());
+            r.setRight(mRegionList[i].r* rcTarget.width());
+            r.setBottom(mRegionList[i].b* rcTarget.width());
+
+            painter->drawRect(r);
+        }
+    }
     if(mShowFp) {
         vector <QPointF> fps;
         QPointF pt;

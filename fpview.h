@@ -59,6 +59,7 @@ private:
     bool mShowGrideLines;
     nfImage* mpSourceImage;
     vector <nfFloat2D> mFpsList;
+    nfFloat2D mCenter;
 
 };
 class HomoView : public ImageWin
@@ -76,11 +77,16 @@ signals:
 public slots:
 private:
     void loadFps();
+    void loadRegions();
     /*<! apply FEC parameters and update ImageView */
-    void udateImage();    int mCamId;
+    void udateImage();
+    int mCamId;
     bool mShowFp;
+    bool mShowGrideLines;
     nfImage* mpSourceImage;
     vector <nfFloat2D> mFpsList;
+    vector <nfRectF> mRegionList;
+
 };
 class AllView : public ImageWin
 {
