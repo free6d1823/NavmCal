@@ -32,7 +32,7 @@ void Control0::start()
 
         gpMainWin->setImage(gpInputImage);
     }
-    gpMainWin->changeView(mId);
+    gpMainWin->changeView(mPanelTypeId);
 }
 ///
 /// \brief stop to do things before this step is fnished

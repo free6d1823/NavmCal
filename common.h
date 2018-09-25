@@ -93,10 +93,14 @@ extern nfImage* gpInputImage;
 /* inform FpView to set current camera id, pData = 0~3, camera id */
 #define MESSAGE_VIEW_SET_CAMERAID   0x0100
 
-/* inform FpView to show feature points, pData = 0 hide, 1 show */
+/* inform SingleView,FecView to show feature points, pData = 0 hide, 1 show */
 #define MESSAGE_VIEW_SHOW_FEATUREPOINTS 0x1000
-/* request FpView do feature points autodetection, pData don't care */
+/* request SingleView do feature points autodetection, pData don't care */
 #define MESSAGE_VIEW_DO_AUTODETECTION   0x1001
+/* request FecView to apply new FEC parameters from setrtings, pData don't care */
+#define MESSAGE_VIEW_UPDATE_FEC   0x1010
+/* inform FecView to show feature points, pData = 0 hide, 1 show */
+#define MESSAGE_VIEW_SHOW_GRIDELINES 0x1011
 
 
 #endif //NAVMES3_COMMON_H_

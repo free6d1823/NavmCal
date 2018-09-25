@@ -18,7 +18,7 @@
   </property>
   <property name="minimumSize">
    <size>
-    <width>120</width>
+    <width>220</width>
     <height>500</height>
    </size>
   </property>
@@ -139,9 +139,9 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>190</y>
-     <width>101</width>
-     <height>31</height>
+     <y>180</y>
+     <width>115</width>
+     <height>41</height>
     </rect>
    </property>
    <layout class="QHBoxLayout" name="horizontalLayout">
@@ -175,7 +175,7 @@
     <rect>
      <x>10</x>
      <y>220</y>
-     <width>101</width>
+     <width>111</width>
      <height>31</height>
     </rect>
    </property>
@@ -216,7 +216,7 @@
     <rect>
      <x>120</x>
      <y>220</y>
-     <width>121</width>
+     <width>125</width>
      <height>31</height>
     </rect>
    </property>
@@ -257,7 +257,7 @@
     <rect>
      <x>10</x>
      <y>270</y>
-     <width>101</width>
+     <width>115</width>
      <height>31</height>
     </rect>
    </property>
@@ -298,7 +298,7 @@
     <rect>
      <x>10</x>
      <y>300</y>
-     <width>101</width>
+     <width>116</width>
      <height>31</height>
     </rect>
    </property>
@@ -339,7 +339,7 @@
     <rect>
      <x>10</x>
      <y>330</y>
-     <width>101</width>
+     <width>114</width>
      <height>31</height>
     </rect>
    </property>
@@ -476,7 +476,7 @@
      <x>10</x>
      <y>370</y>
      <width>191</width>
-     <height>101</height>
+     <height>121</height>
     </rect>
    </property>
    <property name="title">
@@ -488,7 +488,7 @@
       <x>20</x>
       <y>30</y>
       <width>151</width>
-      <height>21</height>
+      <height>28</height>
      </rect>
     </property>
     <layout class="QHBoxLayout" name="horizontalLayout_11">
@@ -527,9 +527,9 @@
     <property name="geometry">
      <rect>
       <x>20</x>
-      <y>50</y>
+      <y>60</y>
       <width>151</width>
-      <height>21</height>
+      <height>28</height>
      </rect>
     </property>
     <layout class="QHBoxLayout" name="horizontalLayout_12">
@@ -568,9 +568,9 @@
     <property name="geometry">
      <rect>
       <x>20</x>
-      <y>70</y>
+      <y>90</y>
       <width>151</width>
-      <height>21</height>
+      <height>31</height>
      </rect>
     </property>
     <layout class="QHBoxLayout" name="horizontalLayout_13">
@@ -605,6 +605,45 @@
      </item>
     </layout>
    </widget>
+  </widget>
+  <widget class="QCheckBox" name="checkShowFp">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>500</y>
+     <width>181</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Show feature points</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="checkShowGrideLines">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>530</y>
+     <width>181</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Show gride lines</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="btnApply">
+   <property name="geometry">
+    <rect>
+     <x>140</x>
+     <y>190</y>
+     <width>89</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>&amp;Apply</string>
+   </property>
   </widget>
  </widget>
  <resources>

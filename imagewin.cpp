@@ -264,7 +264,7 @@ ImageWin* ImageWin::createImageView(int id, QWidget *parent)
     ImageWin* pWin = NULL;
     switch (id) {
     case 1:
-        pWin = (ImageWin*) new FpView(parent);
+        pWin = (ImageWin*) new SingleView(parent);
         break;
     case 2:
         pWin = (ImageWin*) new FecView(parent);

@@ -114,6 +114,17 @@ nfImage* nfImage::ref(unsigned char* data, unsigned int w, unsigned int h, unsig
 //    printf ("nfRefImage#%d (%dx%d)\n", img->seq, w, h);
     return img;
 }
+nfImage* nfImage::clone(nfImage* pSource)
+{
+    nfImage* img =  new nfImage;
+    if (!img)
+        return img;
+    img->buffer = pSource->buffer;
+    img->width = pSource->width;
+    img->stride = pSource->stride;
+    img->height = pSource->height;
+    return img;
+}
 
 void nfImage::destroy(nfImage** ppImage)
 {
@@ -202,147 +213,112 @@ void nfUshortBuffer::destroy(nfUshortBuffer** ppBuffer)
 }
 
 
-#if 0
-IMAGE* ImgProcess::loadImage()
+/* Fisheye model: Q =R*theda; P =f*tan(theda)=f*tan(Q/r)
+ * boundary condition: R=0.5/wf, f = 0.5/tan(wr)
+ * Q = 1/(2* wf) * atan(2* P * tan(wr))  where
+ * Q = sqrt(x,y), x,y[-0.5,0.5] is pixel in fisheye,
+ * P = sqrt(u,v), u,v[-0.5,0.5] is location at rectified image
+ * wf is fisheye FOV/2, assume 90 degree
+ * wr is fov/2 on rectified image
+*/
+#define WF  M_PI_2
+
+void nfDoFec(float u, float v, float &x, float &y, FecParam* pFec)
 {
-    QFile fp(IMAGE_PATH);
-    if(!fp.open(QIODevice::ReadOnly))
-            return NULL;
-
-    IMAGE* pImg = initImage(IMAGE_WIDTH, IMAGE_HEIGHT);
-    if (!pImg){
-       fp.close();
-       return pImg;
-    }
-    do {
-        unsigned char* pSrc = (unsigned char*) malloc(IMAGE_WIDTH*2*IMAGE_HEIGHT);
-        if (!pSrc)
-            break;
-        fp.read((char* )pSrc, IMAGE_WIDTH*2*IMAGE_HEIGHT);
-        YuyvToRgb32(pSrc, IMAGE_WIDTH, IMAGE_WIDTH*2, IMAGE_HEIGHT, pImg->buffer, true);
-        free(pSrc);
-    }while(0);
-   fp.close();
-   return pImg;
-}
-IMAGE* ImgProcess::loadImageArea(int idArea, FecParam* pFec)
-{
-    IMAGE* pSrc = loadImage();
-    if (!pSrc)
-        return NULL;
-    IMAGE* pOut = initImage(IMAGE_AREA_WIDTH, IMAGE_AREA_HEIGHT);
-    unsigned char* pIn;
-    switch (idArea) {
-    case 0:
-        pIn = pSrc->buffer;
-        break;
-    case 1:
-        pIn = pSrc->buffer+ IMAGE_AREA_WIDTH*4;
-        break;
-    case 2:
-        pIn = pSrc->buffer + IMAGE_WIDTH*4*IMAGE_AREA_HEIGHT;
-        break;
-    case 3:
-    default:
-        pIn = pSrc->buffer + IMAGE_WIDTH*4*IMAGE_AREA_HEIGHT+ IMAGE_AREA_WIDTH*4;
-        break;
-    }
-
-    ApplyFec(pIn, pOut->width, pSrc->stride, pOut->height,
-             pOut->buffer, pOut->stride, pFec);
-    ImgProcess::freeImage(pSrc);
-    return pOut;
-}
-void ImgProcess::ApplyFec(unsigned char* pSrc, int width, int inStride,  int height,
-                        unsigned char* pTar, int outStride, FecParam* pFec)
-{
-    double x,y,u,v;
-    int nX, nY;
-    for (int i=0; i< height; i++) {
-        v = (double)i/(double)height;
-        for (int j=0; j<width; j++) {
-            u = (double)j/(double)width;
-            ImgProcess::doFec(u,v,x,y, pFec);
-
-            if ( x>=0 && x<1 && y>=0 && y< 1){
-                nX = (int) (x * (double) width+0.5);
-                nY = (int) (y * (double) height+0.5);
-
-                pTar[i*outStride + j*4  ] = pSrc[nY*inStride+nX*4  ];//B
-                pTar[i*outStride + j*4+1] = pSrc[nY*inStride+nX*4+1];//G
-                pTar[i*outStride + j*4+2] = pSrc[nY*inStride+nX*4+2];//R
-                pTar[i*outStride + j*4+3] = pSrc[nY*inStride+nX*4+3];//A
-            }
-            else {
-                pTar[i*outStride + j*4  ] = 0;
-                pTar[i*outStride + j*4+1] = 0;
-                pTar[i*outStride + j*4+2] = 0;
-                pTar[i*outStride + j*4+3] = 0xff;
-            }
-        }
-    }
-}
-
-#define IsInRect(x,y, rc) (x>=rc.l && x<rc.r && y>= rc.t && y< rc.b)
-
-
-
-#endif
-
-void nfDoFec(float u, float v, float &x, float &y, FecParam* m_pFec)
-{
-    float  u1, v1;
-    float x1,y1;
+    double  u1, v1;
+    double x1,y1;
     //transform uu = M x u
     u1 = u-0.5;
     v1 = v-0.5;
-    float fr = (float) 2*tan(m_pFec->fov/2); //focus length of rectified image
+    //////
+    /// \brief do PTZ first
+    ///
+    double u2,v2;
+    double z = sin(pFec->pitch)*v1 + cos(pFec->pitch);
+    u2 = u1/z;
+    v2 = ( cos(pFec->pitch)*v1 - sin(pFec->pitch))/z;
+    //yaw
+    z = -sin(pFec->yaw)*u2 + cos(pFec->yaw);
+    u2 = ( cos(pFec->yaw)*u2  + sin(pFec->yaw))/z;
+    v2 = v2/z;
 
-    float rp = (float) sqrt(u1*u1+v1*v1); //radius of point (u1,v1) on rectified image
-    float rq;	//fisheye
+    //spin - z-axis
+    u1 = cos(pFec->roll)* u2 - sin(pFec->roll)*v2;
+    v1 = sin(pFec->roll)* u2 + cos(pFec->roll)*v2;
 
-    float rq1;
+    //intrinsic
+    u1 = pFec->a*u1 + pFec->c*v1;		//x-scale and de-skewness
+    v1 = pFec->b*v1;								//y- scale
+
+    double fr = 2*tan(pFec->fov/2); //reverse of focus length of rectified image
+    double rp = sqrt(u1*u1+v1*v1); //radius of point (u1,v1) on rectified image
+    double rq;	//fisheye
+
+    double rq1;
 
     if(1) //fisheye
-        rq1 = (float) atan(rp*fr)/M_PI_2;		//0~1
+        rq1 = atan(rp*fr)/(2*WF);		//[0.5]
     else //normal lens
         rq1 = rp; //if no fec
 
-    //LDC
+
     if (rp <= 0) {
         x1 = y1 = 0;
     } else {
         u1  = u1 * rq1/rp;
         v1  = v1 * rq1/rp;
-
-        float rq2 = rq1*rq1;
-        rq  = (1+m_pFec->k1* rq2+ m_pFec->k2* rq2*rq2);
+    //LDC
+        double rq2 = rq1*rq1;
+        rq  = (1+pFec->k1* rq2+ pFec->k2* rq2*rq2);
         x1 = u1/rq;
-        //t
-        y1 = v1/rq+m_pFec->c*rq2;
+        y1 = v1/rq;
     }
-    float x2,y2;
-    //pitch
-    float phi = atan(y1*2);//assume r=0.5
-    float sy = 1+tan(m_pFec->pitch)*tan(phi);
-    x2 = x1/sy;
-    y2 = (y1/sy)/cos(m_pFec->pitch);
+
+    x = (x1+ pFec->ptCenter.x);
+    y = (y1+ pFec->ptCenter.y);
+
+}
+void nfInvFec(float x, float y, float &u, float &v, FecParam* pFec)
+{
+    float x1,y1;
+    x1 = x - pFec->ptCenter.x;
+    y1 = y - pFec->ptCenter.y;
+
+    //LDC -- a approcimate invers of LDC
+    double rq, rq1, rq2, rp;
+    rq2 = x1*x1 + y1*y1;
+    double rqt = sqrt(rq2);
+    //this approach has error less than 0.1% for small k
+    rq  = (1-pFec->k1* rq2- pFec->k2* rq2*rq2);
+
+    double u1,v1,u2,v2;
+    u1 = x1 /rq;
+    v1 = y1 /rq;
+    rq1 = rqt/rq; //rq1 = atan(rp*fr)/(2*WF);		//[0.5]
+    double fr = 2*tan(pFec->fov/2); //reverse of focus length of rectified image
+    rp = tan(rq1*2*WF)/fr;
+    u1 = u1 * rp/ rq1;
+    v1 = v1 * rp/rq1;
+
+    //intrinsic
+    v1 = v1 / pFec->b;
+    u1 = (u1 - pFec->c*v1)/pFec->a;
+
+    //rev spin
+    u2 = cos(pFec->roll)* u1 + sin(pFec->roll)*v1;
+    v2 = - sin(pFec->roll)* u1 + cos(pFec->roll)*v1;
+    //rev
+    double z;
     //yaw
-    float theda = atan(x2*2);
-    float sx = 1+tan(m_pFec->yaw)*tan(theda);
-    x2 = (x2/sx)/cos(m_pFec->yaw);
-    y2 = y2/sx;
-
-    //spin - z-axis
-    x1 = cos(m_pFec->roll)* x2 - sin(m_pFec->roll)*y2;
-    y1 = sin(m_pFec->roll)* x2 + cos(m_pFec->roll)*y2;
-    //intrinsic parameters calibration
-    //t 	x1 = param.a*x1 + param.c*y1;		//x-scale and de-skewness
-    x1 = m_pFec->a*x1;		//x-scale and de-skewness
-    y1 = m_pFec->b*y1;								//y- scale
-    x = (x1+ m_pFec->ptCenter.x);
-    y = (y1+ m_pFec->ptCenter.y);
-
+    z = 1/(sin(pFec->yaw)*u2 + cos(pFec->yaw));
+    u2 = (z*u2 - sin(pFec->yaw))/cos(pFec->yaw);
+    v2 = v2*z;
+    //rev pitch
+    z = 1 /(cos(pFec->pitch) - sin(pFec->pitch)*v2);
+    u1 = u2 * z;
+    v1 = (v2*z + sin(pFec->pitch) )/cos(pFec->pitch);
+    u = u1 + 0.5;
+    v = v1 + 0.5;
 }
 
 bool nfDoHomoTransform(float s, float t, float &u, float &v, float h[3][3])
@@ -665,7 +641,6 @@ bool TexProcess::saveIniFile(const char* filename)
     if(mpSourceImageName) {
         WriteProfileString("system", "image_file", mpSourceImageName, filename);
     }
-    memset(mAreaSettings, 0, sizeof(mAreaSettings));
     for (i=0; i< MAX_CAMERAS; i++) {
         bOK = SaveAreaSettings(&mAreaSettings[i], i, filename);
         if (bOK != true)

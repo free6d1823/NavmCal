@@ -32,8 +32,8 @@ public slots:
 private:
     void createUi();
 protected:
-    TYPE mId;
-
+    TYPE mPanelTypeId;
+    int mCamId; /*<! current selected camera ID */
 };
 ///////////////////////////////////////
 namespace Ui {
@@ -55,6 +55,7 @@ public:
     /// \brief stop to do things before this step is fnished
     ///
     virtual void stop();
+
 private:
     Ui::Control0 *ui;
 };
@@ -116,9 +117,24 @@ public slots:
     void onCamera1();
     void onCamera2();
     void onCamera3();
+    void onFovValueChanged(double value);
+    void onIntricAChanged(double value);
+    void onIntricBChanged(double value);
+    void onIntricCChanged(double value);
+    void onK1ValueChanged(double value);
+    void onK2ValueChanged(double value);
+    void onCenterXChanged(double value);
+    void onCenterYChanged(double value);
+    void onPitchChanged(double value);
+    void onYawChanged(double value);
+    void onRollChanged(double value);
+    void onShowFp(bool show);
+    void onShowGrideLines(bool show);
+    void onApplyFec();
 private:
     void loadCamera(int cam);
     void createUi();
+    void  updateUi();
     Ui::Control2 *ui;
 };
 ///////////////////////////////////////////////////////////

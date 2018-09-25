@@ -7,6 +7,7 @@ Control3::Control3(TYPE id,QWidget *parent) :
     ui(new Ui::Control3)
 {
     ui->setupUi(this);
+    createUi();
 }
 
 Control3::~Control3()
@@ -56,6 +57,7 @@ static nfImage* LoadImagebyArea(int nCamId)
 }
 void Control3::loadCamera(int cam)
 {
+    mCamId = cam;
     if (gpInputImage){
         nfImage* pImage = LoadImagebyArea(cam);
         gpMainWin->setImage(pImage);
@@ -97,7 +99,8 @@ void Control3::onCamera3(){
 ///
 void Control3::start()
 {
-    gpMainWin->changeView(mId);
+    gpMainWin->changeView(mPanelTypeId);
+    onCamera0();
 }
 ///
 /// \brief stop to do things before this step is fnished

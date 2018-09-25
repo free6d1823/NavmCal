@@ -71,10 +71,11 @@ static nfImage* LoadImagebyArea(int nCamId)
 
 void Control1::loadCamera(int cam)
 {
+    mCamId = cam;
     if (gpInputImage){
         nfImage* pImage = LoadImagebyArea(cam);
         gpMainWin->setImage(pImage);
-        nfImage::dettach(&pImage);//releas buffer to QImage
+        nfImage::dettach(&pImage);//releas buffer to receiver
         gpMainWin->sendMessage(MESSAGE_VIEW_SET_CAMERAID, (long) cam);
     }
 }
@@ -112,7 +113,7 @@ void Control1::onCamera3(){
 ///
 void Control1::start()
 {
-    gpMainWin->changeView(mId);
+    gpMainWin->changeView(mPanelTypeId);
     onCamera0();
 }
 ///

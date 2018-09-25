@@ -18,7 +18,7 @@ Control4::~Control4()
 ///
 void Control4::start()
 {
-    gpMainWin->changeView(mId);
+    gpMainWin->changeView(mPanelTypeId);
 }
 ///
 /// \brief stop to do things before this step is fnished

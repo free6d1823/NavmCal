@@ -58,9 +58,10 @@ void MainWindow::changeView(int id)
 {
     if (id != mCurImgViewId){
         mImageView[id] = ImageWin::createImageView(id);
+        Q_ASSERT(mImageView[id]->isWindow());
         setCentralWidget(mImageView[id]);//old one will be killed by Qt
         mCurImgViewId = id;
-         mImageView[mCurImgViewId]->setVisible(true);
+        mImageView[mCurImgViewId]->setVisible(true);
     }
 }
 
@@ -156,11 +157,11 @@ void MainWindow::onFileSaveAs()
 }
 void MainWindow::doEnableFlowStep(int id)
 {
-    mControlPanel[id]->start();
     for (int i=0; i< ControlPanel::STEP_MAX; i++){
         mStepsAct[i]->setChecked(i==id);
         mDockView[i]->setVisible(i==id);
     }
+    mControlPanel[id]->start();
 }
 void MainWindow::onFlowStep0(){doEnableFlowStep(0);}
 void MainWindow::onFlowStep1(){doEnableFlowStep(1);}

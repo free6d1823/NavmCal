@@ -26,7 +26,7 @@ ControlPanel* ControlPanel::create(TYPE id, QWidget *parent)
     return pPanel;
 }
 
-ControlPanel::ControlPanel(TYPE id, QWidget *parent) : QWidget(parent), mId(id)
+ControlPanel::ControlPanel(TYPE id, QWidget *parent) : QWidget(parent), mPanelTypeId(id), mCamId(0)
 {
 
 }

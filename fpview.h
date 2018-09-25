@@ -17,12 +17,12 @@ signals:
 public slots:
 };
 
-class FpView : public ImageWin
+class SingleView : public ImageWin
 {
     Q_OBJECT
 public:
-    explicit FpView(QWidget *parent = 0);
-    ~FpView();
+    explicit SingleView(QWidget *parent = 0);
+    ~SingleView();
     virtual void processMessage(unsigned int command, long data);
     virtual void onPostDraw(QPainter* painter);
 signals:
@@ -41,10 +41,25 @@ class FecView : public ImageWin
 public:
     explicit FecView(QWidget *parent = 0);
     ~FecView();
-
+    virtual void processMessage(unsigned int command, long data);
+    virtual void onPostDraw(QPainter* painter);
+    /*<! handle image be FecView itself */
+    virtual void setImage(nfImage* pSource);
 signals:
 
 public slots:
+private:
+    void applyFec(nfPByte pSrc, int width, int inStride,  int height,
+               nfPByte pTar, int outWidth, int OutHeight, int outStride);
+    void loadFps();
+    /*<! apply FEC parameters and update ImageView */
+    void udateImage();
+    int mCamId;
+    bool mShowFp;
+    bool mShowGrideLines;
+    nfImage* mpSourceImage;
+    vector <nfFloat2D> mFpsList;
+
 };
 class HomoView : public ImageWin
 {
@@ -52,9 +67,12 @@ class HomoView : public ImageWin
 public:
     explicit HomoView(QWidget *parent = 0);
     ~HomoView();
+    virtual void processMessage(unsigned int command, long data);
 signals:
 
 public slots:
+private:
+    int mCamId;
 };
 class AllView : public ImageWin
 {

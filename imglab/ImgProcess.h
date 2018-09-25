@@ -38,6 +38,14 @@ static nfImage* create(unsigned int w, unsigned int h, unsigned int bpp);
 /// \return the nfImage object
 ///
 static nfImage* ref(unsigned char* data, unsigned int w, unsigned int h, unsigned int stride);
+
+////
+/// \brief clone create a nfImage object but share the same buffer as source. The new object owns the buffer, so the source should use detach() to release the buffer
+/// \param source
+/// \return pointer to the clone nfImage
+///
+static nfImage* clone(nfImage* pSource);
+
 static void destroy(nfImage** ppImage);
 ///
 /// \brief dettach the buffer from a nfImage object and destroy this object
@@ -98,21 +106,12 @@ private:
 };
 
 void nfYuyvToRgb32(nfImage* pYuv, unsigned char* pRgb, bool uFirst, bool bMirror);
-//void doFec(double u, double v, double &x, double &y, FecParam* m_pFec);
-//void calculateHomoMatrix(dbPOINT* fps, dbPOINT* fpt, HomoParam* homo);
-//bool doHomoTransform(double s, double t, double &u, double &v, double h[3][3]);
+void nfDoFec(float u, float v, float &x, float &y, FecParam* pFec);
+void nfInvFec(float x, float y, float &u, float &v, FecParam* pFec);
+void nfFindHomoMatrix(nfFloat2D s[4], nfFloat2D t[4], float hcoef[3][3]);
+bool nfDoHomoTransform(float s, float t, float &u, float &v, float h[3][3]);
 
 
-#if 0
-IMAGE* loadImage();
-IMAGE* loadImageArea(int idArea, FecParam* pFec);
-void ApplyFec(unsigned char* pSrc, int width, int inStride,  int height, unsigned char* pTar, int outStride, FecParam* pFec);
-
-    /*!<S= HT, S=source, T=target on stitched view */
-static void findHomoMatreix(dbPOINT s[4], dbPOINT t[4], double hcoef[3][3]);
-
-
-#endif
 class TexProcess
 {
 public:
