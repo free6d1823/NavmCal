@@ -12,12 +12,15 @@
 #endif
 
 #define MAX_CAMERAS 4   /*<! numbers of cameras, or number of separated area, in AVM */
-#define MAX_FP_AREA 4   /*<! number of feature points region in a camera area */
+#define MAX_FP_AREA 16   /*<! number of feature points region in a camera area */
 /*!<numbersof total FP in a camera area*/
-#define FP_COUNTS			10
+#define FP_COUNTS			30
 
 
 /*<! basic data type re-definition */
+#ifndef _NFORE_DATA_TYPE___
+#define _NFORE_DATA_TYPE___
+
 typedef unsigned char nfByte, *nfPByte;
 
 typedef struct _nfFloat2D{
@@ -37,6 +40,7 @@ typedef struct _nfRectF {
     float r;
     float b;
 }nfRectF;
+#endif //_NFORE_DATA_TYPE___
 
 /*!<Fisheye Correction parametters*/
 typedef struct _FecParam{

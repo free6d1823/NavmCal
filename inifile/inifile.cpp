@@ -63,6 +63,7 @@ static bool isright_brace(char c )
 {
     return RIGHT_BRACE == c? true : false;
 }
+#define max(a,b) ((a)>(b)?(a):(b))
 static bool parse_file(const char *section, const char *key, const char *buf,int *sec_s,int *sec_e,
 					  int *key_s,int *key_e, int *value_s, int *value_e)
 {
@@ -118,7 +119,8 @@ static bool parse_file(const char *section, const char *key, const char *buf,int
 						while(j < i && p[j]!='=') {
 							j++;
 							if('=' == p[j]) {
-								if(strncmp(key,p+newline_start,j-newline_start)==0)
+                                //jammy fixed 20180925 if(strncmp(key,p+newline_start,j-newline_start)==0)
+                                if(strncmp(key,p+newline_start, max(strlen(key),j-newline_start ))==0)
 								{
 									//find the key ok
 									*key_s = newline_start;

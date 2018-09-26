@@ -8,7 +8,8 @@
 #define FEC_IMAGE_HEIGHT    1000
 #define HOMO_IMAGE_WIDTH 1000
 #define HOMO_IMAGE_HEIGHT 1000
-
+#define FP_WIDTH 5
+#define GRIDELINE_WIDTH 1
 /* ==========================================================
  * Input source Image Viewer
  * ==========================================================
@@ -78,14 +79,14 @@ void SingleView::loadFps()
         //normalize
         if (pAs->fpf[3].x > 10 || pAs->fpf[3].y > 10)
         { //normalize to [0,1]
-            for (int i=0; i<FP_COUNTS; i++){
+            for (int i=0; i<pAs->nFpCounts; i++){
                 pAs->fpf[i].x /= (float)mImage.width();
                 pAs->fpf[i].y /= (float)mImage.height();
             }
         }
         //
         mFpsList.clear();
-        for (int i=0; i<FP_COUNTS; i++){
+        for (int i=0; i<pAs->nFpCounts; i++){
             mFpsList.push_back(pAs->fpf[i]);
         }
     }
@@ -102,7 +103,7 @@ void SingleView::onPostDraw(QPainter* painter)
             fps.push_back(pt);
         }
         QPen pen1;
-        pen1.setWidth(3);
+        pen1.setWidth(FP_WIDTH);
         pen1.setColor(Qt::red);
         painter->setPen(pen1);
         for (unsigned int i=0; i<fps.size(); i++) {
@@ -231,13 +232,13 @@ void FecView::loadFps()
             return;
         }
         //update fps
-        for (int i=0; i<FP_COUNTS; i++){
+        for (int i=0; i<pAs->nFpCounts; i++){
             nfInvFec(pAs->fpf[i].x, pAs->fpf[i].y, pAs->fps[i].x, pAs->fps[i].y, &pAs->fec);
         }
 
         //
         mFpsList.clear();
-        for (int i=0; i<FP_COUNTS; i++){
+        for (int i=0; i<pAs->nFpCounts; i++){
             mFpsList.push_back(pAs->fps[i]);
         }
     }
@@ -247,7 +248,7 @@ void FecView::onPostDraw(QPainter* painter)
     QRect rcTarget = mImageLabel->rect();
     if(mShowGrideLines) {
         QPen pen1;
-        pen1.setWidth(1);
+        pen1.setWidth(GRIDELINE_WIDTH);
         pen1.setColor(Qt::blue);
         painter->setPen(pen1);
 
@@ -270,7 +271,7 @@ void FecView::onPostDraw(QPainter* painter)
             fps.push_back(pt);
         }
         QPen pen1;
-        pen1.setWidth(3);
+        pen1.setWidth(FP_WIDTH);
         pen1.setColor(Qt::red);
         painter->setPen(pen1);
         for (unsigned int i=0; i<fps.size(); i++) {
@@ -310,8 +311,8 @@ static void applyAll(int camId, nfPByte pSrc, int width, int inStride,  int heig
                        nfPByte pTar, int outWidth, int OutHeight, int outStride)
 {
     AreaSettings* pAs = & gpTexProcess->mAreaSettings[camId];
-    if(pAs->nFpAreaCounts == 18)
-        nfCalculateHomoMatrix18(pAs->fps, pAs->fpt, pAs->homo);
+    if(pAs->nFpAreaCounts == 16)
+        nfCalculateHomoMatrix16(pAs->fps, pAs->fpt, pAs->homo);
     else if (pAs->nFpAreaCounts == 12)
         nfCalculateHomoMatrix12(pAs->fps, pAs->fpt, pAs->homo);
     else
@@ -430,7 +431,7 @@ void HomoView::onPostDraw(QPainter* painter)
     QRect rcTarget = mImageLabel->rect();
     if(mShowGrideLines) {
         QPen pen1(Qt::blue);
-        pen1.setWidth(1);
+        pen1.setWidth(GRIDELINE_WIDTH);
         painter->setPen(pen1);
         QRectF r;
         for (unsigned int i=0; i<mRegionList.size(); i++){
@@ -451,7 +452,7 @@ void HomoView::onPostDraw(QPainter* painter)
             fps.push_back(pt);
         }
         QPen pen1;
-        pen1.setWidth(3);
+        pen1.setWidth(FP_WIDTH);
         pen1.setColor(Qt::red);
         painter->setPen(pen1);
         for (unsigned int i=0; i<fps.size(); i++) {

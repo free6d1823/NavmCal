@@ -390,42 +390,64 @@ void nfCalculateHomoMatrix4(nfFloat2D* fps, nfFloat2D* fpt, HomoParam* homo)
     }
 
 }
-/*<! 12-regions feature points indexing , each rect is clock-wised numbering
+/*<! 12-regions, 21feature points indexing , each rect is clock-wised numbering
  *   0 -------- 1 -------- 2 -------- 3 ---------4 ---------5 -------- 6
- *   | region 0 | region 1 | region 2 | region 3 |
+ *   | region 0 | region 1 | region 2 | region 3 |    4     |    5     |
  *   7 -------- 8 -------- 9 -------- 10 --------11 --------12 ------- 13
- *   | region 6 | region 7 | region 8 | region 9 |
+ *   | region 6 | region 7 | region 8 | region 9 |    10    |    11    |
  *   14 --------15-------- 16-------- 17 --------18 --------19 ------- 20
  **/
 void nfCalculateHomoMatrix12(nfFloat2D* fps, nfFloat2D* fpt, HomoParam* homo)
 {
-    nfFloat2D s[12][4] = {{fps[0], fps[1], fps[6], fps[5]}, /*<! source ( uncorrected) region 0 */
-                                 {fps[1], fps[2], fps[7], fps[6]},
-                                 {fps[2], fps[3], fps[8], fps[7]},
-                                 {fps[3], fps[4], fps[9], fps[8]}};
-    nfFloat2D t[12][4] = {{fpt[0], fpt[1], fpt[6], fpt[5]}, /*<! corrected region 0 */
-                                 {fpt[1], fpt[2], fpt[7], fpt[6]},
-                                 {fpt[2], fpt[3], fpt[8], fpt[7]},
-                                 {fpt[3], fpt[4], fpt[9], fpt[8]}};
-
+    nfFloat2D s[12][4] = {{fps[0], fps[1], fps[8], fps[7]}, /*<! source ( uncorrected) region 0 */
+                          {fps[1], fps[2], fps[9], fps[8]},
+                          {fps[2], fps[3], fps[10], fps[9]},
+                          {fps[3], fps[4], fps[11], fps[10]},
+                          {fps[4], fps[5], fps[12], fps[11]},
+                          {fps[5], fps[6], fps[13], fps[12]},
+                          {fps[7], fps[8], fps[15], fps[14]},
+                          {fps[8], fps[9], fps[16], fps[15]},
+                          {fps[9], fps[10], fps[17], fps[16]},
+                          {fps[10], fps[11], fps[18], fps[17]},
+                          {fps[11], fps[12], fps[19], fps[18]},
+                          {fps[12], fps[13], fps[20], fps[19]},
+                         };
+    nfFloat2D t[12][4] = {{fpt[0], fpt[1], fpt[8], fpt[7]}, /*<! corrected region 0 */
+                          {fpt[1], fpt[2], fpt[9], fpt[8]},
+                          {fpt[2], fpt[3], fpt[10], fpt[9]},
+                          {fpt[3], fpt[4], fpt[11], fpt[10]},
+                          {fpt[4], fpt[5], fpt[12], fpt[11]},
+                          {fpt[5], fpt[6], fpt[13], fpt[12]},
+                          {fpt[7], fpt[8], fpt[15], fpt[14]},
+                          {fpt[8], fpt[9], fpt[16], fpt[15]},
+                          {fpt[9], fpt[10], fpt[17], fpt[16]},
+                          {fpt[10], fpt[11], fpt[18], fpt[17]},
+                          {fpt[11], fpt[12], fpt[19], fpt[18]},
+                          {fpt[12], fpt[13], fpt[20], fpt[19]},
+                         };
     for(int i=0; i<12; i++) {
         nfFindHomoMatrix(s[i],t[i], homo[i].h);
     }
 
 }
-void nfCalculateHomoMatrix18(nfFloat2D* fps, nfFloat2D* fpt, HomoParam* homo)
+/*<! 16-regions, 27  feature points indexing , each rect is clock-wised numbering
+ *   0 -------- 1 -------- 2 -------- 3 ---------4 ---5-- 6---7---8
+ *   | region 0 | region 1 | region 2 | region 3 |  4 | 5 | 6 | 7 |
+ *   9 -------- 10-------- 11------- 12 --------13----14--15--16--17
+ *   | region 8 | region 9 | region 10| region 11| 12 |13 |14 |15 |
+ *   18 --------19-------- 20-------- 21-------22---23---24--25--26
+ **/
+void nfCalculateHomoMatrix16(nfFloat2D* fps, nfFloat2D* fpt, HomoParam* homo)
 {
-    nfFloat2D s[18][4] = {{fps[0], fps[1], fps[6], fps[5]}, /*<! source ( uncorrected) region 0 */
-                                 {fps[1], fps[2], fps[7], fps[6]},
-                                 {fps[2], fps[3], fps[8], fps[7]},
-                                 {fps[3], fps[4], fps[9], fps[8]}};
-    nfFloat2D t[18][4] = {{fpt[0], fpt[1], fpt[6], fpt[5]}, /*<! corrected region 0 */
-                                 {fpt[1], fpt[2], fpt[7], fpt[6]},
-                                 {fpt[2], fpt[3], fpt[8], fpt[7]},
-                                 {fpt[3], fpt[4], fpt[9], fpt[8]}};
+    int k[16][4] = {
+        {0,1,10,9},{1,2,11,10},{2,3,12,11},{3,4,13,12},{4,5,14,13},{5,6,15,14},{6,7,16,15},{7,8,17,16},
+        {9,10,19,18},{10,11,20,19},{11,12,21,20},{12,13,22,21},{13,14,23,22},{14,15,24,23},{15,16,25,24},{16,17,26,25},
+    };
 
-    for(int i=0; i<18; i++) {
-        nfFindHomoMatrix(s[i],t[i], homo[i].h);
+    for(int i=0; i<16; i++) {
+        nfFloat2D s[4] = {fps[k[i][0]],fps[k[i][1]], fps[k[i][2]], fps[k[i][3]]};
+        nfFloat2D t[4] = {fpt[k[i][0]],fpt[k[i][1]], fpt[k[i][2]], fpt[k[i][3]]};
+        nfFindHomoMatrix(s,t, homo[i].h);
     }
 
 }
@@ -434,13 +456,13 @@ void nfCalculateHomoMatrix18(nfFloat2D* fps, nfFloat2D* fpt, HomoParam* homo)
 /// |-------|------|
 /// | front | right|
 /// |-------|------|(1,0.5)
-/// | rear  | left |
+/// | left  | rear |
 /// |-------|------|(1,1)
 ///
 
 
 nfFloat2D TexProcess::s_offsetCam[MAX_CAMERAS]={ {0,0}, {0.5, 0},
-                          {0, 0.5}, {0.5, 0.5}};
+                          {0.5, 0.5}, {0, 0.5} };
 
 bool    LoadFecParam(FecParam* pFecParam, int nArea, const char* iniFile)
 {
@@ -466,6 +488,7 @@ bool    LoadFecParam(FecParam* pFecParam, int nArea, const char* iniFile)
 }
 bool    LoadHomoParam(HomoParam* pParam, int nArea, int nFp, const char* iniFile)
 {
+    /*
     char section[32];
 
     sprintf(section,"homoparam_%d_%d", nArea, nFp);
@@ -481,7 +504,7 @@ bool    LoadHomoParam(HomoParam* pParam, int nArea, int nFp, const char* iniFile
 
     if(! GetProfileArrayInt(section, "fp_index", pParam->fp_index, 4, iniFile)){
         fprintf(stderr, "Failed to read [%s fp_index !\n", section);
-    }
+    }*/
     return true;
 }
 bool    LoadAreaSettings(AreaSettings* pParam, int nArea, const char* iniFile)
@@ -504,10 +527,10 @@ bool    LoadAreaSettings(AreaSettings* pParam, int nArea, const char* iniFile)
         if(!GetProfilePointFloat(section, key, &pParam->fpt[i], iniFile)){
             fprintf(stderr, "%s value not found!\n", key);
         }
-        sprintf(key, "fps_%d", i);
+/*        sprintf(key, "fps_%d", i);
         if(!GetProfilePointFloat(section, key, &pParam->fps[i], iniFile)){
             fprintf(stderr, "[%s] %s value not found!\n", section, key);
-        }
+        }*/
         sprintf(key, "fpf_%d", i);
         if(!GetProfilePointFloat(section, key, &pParam->fpf[i], iniFile)){
             fprintf(stderr, "[%s] %s value not found!\n", section, key);
@@ -560,7 +583,7 @@ bool    SaveFecParam(FecParam* pFecParam, int nArea, const char* iniFile)
 bool    SaveHomoParam(HomoParam* pParam, int nArea, int nFp, const char* iniFile)
 {
     char section[32];
-
+/*
     sprintf(section,"homoparam_%d_%d", nArea, nFp);
     if(! WriteProfileArrayFloat(section, "h0", pParam->h[0], 3, iniFile))
         return false;
@@ -571,7 +594,7 @@ bool    SaveHomoParam(HomoParam* pParam, int nArea, int nFp, const char* iniFile
 
     if(! WriteProfileArrayInt(section, "fp_index", pParam->fp_index, 4, iniFile))
         return false;
-
+*/
     return true;
 }
 
@@ -588,9 +611,9 @@ bool    SaveAreaSettings(AreaSettings* pParam, int nArea, const char* iniFile)
         sprintf(key, "fpt_%d", i);
         if(!WriteProfilePointFloat(section, key, &pParam->fpt[i], iniFile))
             return false;
-        sprintf(key, "fps_%d", i);
+/*        sprintf(key, "fps_%d", i);
         if(!WriteProfilePointFloat(section, key, &pParam->fps[i], iniFile))
-            return false;
+            return false;*/
         sprintf(key, "fpf_%d", i);
         if(!WriteProfilePointFloat(section, key, &pParam->fpf[i], iniFile))
             return false;
@@ -598,7 +621,7 @@ bool    SaveAreaSettings(AreaSettings* pParam, int nArea, const char* iniFile)
 
     if(!SaveFecParam(&pParam->fec, nArea, iniFile))
         return false;
-    if(!WriteProfileInt(section, "fp_areas", pParam->nFpAreaCounts, iniFile))
+    if(!WriteProfileInt(section, "fp_regions", pParam->nFpAreaCounts, iniFile))
         return false;
     for (int i=0; i< pParam->nFpAreaCounts; i++) {
         sprintf(key, "region_%d", i);
@@ -722,8 +745,8 @@ TexProcess::TexProcess():mpSourceImageName(NULL)
 bool TexProcess::update()
 {
     for (int m=0; m< MAX_CAMERAS; m++) {
-        if (mAreaSettings[m].nFpAreaCounts == 18){
-            nfCalculateHomoMatrix18(mAreaSettings[m].fps, mAreaSettings[m].fpt, mAreaSettings[m].homo);
+        if (mAreaSettings[m].nFpAreaCounts == 16){
+            nfCalculateHomoMatrix16(mAreaSettings[m].fps, mAreaSettings[m].fpt, mAreaSettings[m].homo);
         }
         else if(mAreaSettings[m].nFpAreaCounts == 12){
             nfCalculateHomoMatrix12(mAreaSettings[m].fps, mAreaSettings[m].fpt, mAreaSettings[m].homo);

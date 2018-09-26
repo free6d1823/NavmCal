@@ -112,7 +112,7 @@ void nfFindHomoMatrix(nfFloat2D s[4], nfFloat2D t[4], float hcoef[3][3]);
 bool nfDoHomoTransform(float s, float t, float &u, float &v, float h[3][3]);
 void nfCalculateHomoMatrix4(nfFloat2D* fps, nfFloat2D* fpt, HomoParam* homo);
 void nfCalculateHomoMatrix12(nfFloat2D* fps, nfFloat2D* fpt, HomoParam* homo);
-void nfCalculateHomoMatrix18(nfFloat2D* fps, nfFloat2D* fpt, HomoParam* homo);
+void nfCalculateHomoMatrix16(nfFloat2D* fps, nfFloat2D* fpt, HomoParam* homo);
 
 
 class TexProcess
