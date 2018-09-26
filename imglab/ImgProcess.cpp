@@ -464,7 +464,7 @@ void nfCalculateHomoMatrix16(nfFloat2D* fps, nfFloat2D* fpt, HomoParam* homo)
 nfFloat2D TexProcess::s_offsetCam[MAX_CAMERAS]={ {0,0}, {0.5, 0},
                           {0.5, 0.5}, {0, 0.5} };
 
-bool    LoadFecParam(FecParam* pFecParam, int nArea, const char* iniFile)
+bool    LoadFecParam(FecParam* pFecParam, int nArea, void* iniFile)
 {
     char section[32];
     sprintf(section, "fecparam_%d", nArea);
@@ -486,9 +486,11 @@ bool    LoadFecParam(FecParam* pFecParam, int nArea, const char* iniFile)
 
     return true;
 }
-bool    LoadHomoParam(HomoParam* pParam, int nArea, int nFp, const char* iniFile)
+/* please real time calculate homo coefficients by fpf and fpt */
+#if 0
+bool    LoadHomoParam(HomoParam* pParam, int nArea, int nFp, void* iniFile)
 {
-    /*
+
     char section[32];
 
     sprintf(section,"homoparam_%d_%d", nArea, nFp);
@@ -504,10 +506,11 @@ bool    LoadHomoParam(HomoParam* pParam, int nArea, int nFp, const char* iniFile
 
     if(! GetProfileArrayInt(section, "fp_index", pParam->fp_index, 4, iniFile)){
         fprintf(stderr, "Failed to read [%s fp_index !\n", section);
-    }*/
+    }
     return true;
 }
-bool    LoadAreaSettings(AreaSettings* pParam, int nArea, const char* iniFile)
+#endif
+bool    LoadAreaSettings(AreaSettings* pParam, int nArea, void* iniFile)
 {
 
     char section[32];
@@ -527,10 +530,13 @@ bool    LoadAreaSettings(AreaSettings* pParam, int nArea, const char* iniFile)
         if(!GetProfilePointFloat(section, key, &pParam->fpt[i], iniFile)){
             fprintf(stderr, "%s value not found!\n", key);
         }
-/*        sprintf(key, "fps_%d", i);
+        /*  fps for temp use only*/
+#if 0
+        sprintf(key, "fps_%d", i);
         if(!GetProfilePointFloat(section, key, &pParam->fps[i], iniFile)){
             fprintf(stderr, "[%s] %s value not found!\n", section, key);
-        }*/
+        }
+#endif
         sprintf(key, "fpf_%d", i);
         if(!GetProfilePointFloat(section, key, &pParam->fpf[i], iniFile)){
             fprintf(stderr, "[%s] %s value not found!\n", section, key);
@@ -549,11 +555,11 @@ bool    LoadAreaSettings(AreaSettings* pParam, int nArea, const char* iniFile)
 
         }
 
-        LoadHomoParam(&pParam->homo[i], nArea, i, iniFile);
+        //LoadHomoParam(&pParam->homo[i], nArea, i, iniFile);
     }
     return true;
 }
-bool    SaveFecParam(FecParam* pFecParam, int nArea, const char* iniFile)
+bool    SaveFecParam(FecParam* pFecParam, int nArea, void* iniFile)
 {
     char section[32];
     sprintf(section,"fecparam_%d", nArea);
@@ -580,10 +586,12 @@ bool    SaveFecParam(FecParam* pFecParam, int nArea, const char* iniFile)
         return false;
     return true;
 }
-bool    SaveHomoParam(HomoParam* pParam, int nArea, int nFp, const char* iniFile)
+/* please real time calculate homo coefficients by fpf and fpt */
+#if 0
+bool    SaveHomoParam(HomoParam* pParam, int nArea, int nFp, void* iniFile)
 {
     char section[32];
-/*
+
     sprintf(section,"homoparam_%d_%d", nArea, nFp);
     if(! WriteProfileArrayFloat(section, "h0", pParam->h[0], 3, iniFile))
         return false;
@@ -594,11 +602,11 @@ bool    SaveHomoParam(HomoParam* pParam, int nArea, int nFp, const char* iniFile
 
     if(! WriteProfileArrayInt(section, "fp_index", pParam->fp_index, 4, iniFile))
         return false;
-*/
+
     return true;
 }
-
-bool    SaveAreaSettings(AreaSettings* pParam, int nArea, const char* iniFile)
+#endif
+bool    SaveAreaSettings(AreaSettings* pParam, int nArea, void* iniFile)
 {
     char section[32];
     sprintf(section, "area_%d", nArea);
@@ -611,9 +619,11 @@ bool    SaveAreaSettings(AreaSettings* pParam, int nArea, const char* iniFile)
         sprintf(key, "fpt_%d", i);
         if(!WriteProfilePointFloat(section, key, &pParam->fpt[i], iniFile))
             return false;
-/*        sprintf(key, "fps_%d", i);
+#if 0
+        sprintf(key, "fps_%d", i);
         if(!WriteProfilePointFloat(section, key, &pParam->fps[i], iniFile))
-            return false;*/
+            return false;
+#endif
         sprintf(key, "fpf_%d", i);
         if(!WriteProfilePointFloat(section, key, &pParam->fpf[i], iniFile))
             return false;
@@ -628,7 +638,7 @@ bool    SaveAreaSettings(AreaSettings* pParam, int nArea, const char* iniFile)
         if(!WriteProfileRectFloat(section, key, &pParam->region[i], iniFile)){
         }
 
-        SaveHomoParam(&pParam->homo[i], nArea, i, iniFile);
+        //SaveHomoParam(&pParam->homo[i], nArea, i, iniFile);
     }
     return true;
 }
@@ -699,30 +709,40 @@ bool TexProcess::loadIniFile(const char* filename)
         free (mpSourceImageName);
         mpSourceImageName = NULL;
     }
+    void* handle  = openIniFile(filename, true);
+    if(!handle)
+        return false;
+
     if (GetProfileString("system", "image_file", sourceImg,
-                     sizeof(sourceImg), "", filename)) {
+                     sizeof(sourceImg), "", handle)) {
         mpSourceImageName = strdup(sourceImg);
     }
     memset(mAreaSettings, 0, sizeof(mAreaSettings));
     for (i=0; i< MAX_CAMERAS; i++) {
-        bOK = LoadAreaSettings(&mAreaSettings[i], i, filename);
+        bOK = LoadAreaSettings(&mAreaSettings[i], i, handle);
         if (bOK != true)
             break;
     }
+    closeIniFile(handle);
     return bOK;
 }
 bool TexProcess::saveIniFile(const char* filename)
 {
     int i ;
     bool bOK;
+    void* handle  = openIniFile(filename, false);
+    if(!handle)
+        return false;
+
     if(mpSourceImageName) {
-        WriteProfileString("system", "image_file", mpSourceImageName, filename);
+        WriteProfileString("system", "image_file", mpSourceImageName, handle);
     }
     for (i=0; i< MAX_CAMERAS; i++) {
-        bOK = SaveAreaSettings(&mAreaSettings[i], i, filename);
+        bOK = SaveAreaSettings(&mAreaSettings[i], i, handle);
         if (bOK != true)
             break;
     }
+    closeIniFile(handle);
     return bOK;
 }
 TexProcess::TexProcess():mpSourceImageName(NULL)
