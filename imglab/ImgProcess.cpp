@@ -594,8 +594,6 @@ bool    SaveFecParam(FecParam* pFecParam, int nArea, void* iniFile)
         return false;
     return true;
 }
-/* please real time calculate homo coefficients by fpf and fpt */
-#if 0
 bool    SaveHomoParam(HomoParam* pParam, int nArea, int nFp, void* iniFile)
 {
     char section[32];
@@ -613,7 +611,6 @@ bool    SaveHomoParam(HomoParam* pParam, int nArea, int nFp, void* iniFile)
 
     return true;
 }
-#endif
 bool    SaveAreaSettings(AreaSettings* pParam, int nArea, void* iniFile)
 {
     char section[32];
@@ -649,7 +646,7 @@ bool    SaveAreaSettings(AreaSettings* pParam, int nArea, void* iniFile)
         if(!WriteProfileRectFloat(section, key, &pParam->region[i], iniFile)){
         }
 
-        //SaveHomoParam(&pParam->homo[i], nArea, i, iniFile);
+        SaveHomoParam(&pParam->homo[i], nArea, i, iniFile);
     }
     return true;
 }
@@ -818,10 +815,15 @@ TexProcess::TexProcess():mpSourceImageName(NULL)
         for(int k=0; k<MAX_FP_AREA; k++)
             m_RegionMap[m][k] = 1;
     }
+    m_RegionMap[0][6] = 1;
+    m_RegionMap[0][11] = 1;
+    m_RegionMap[2][6] = 1;
+    m_RegionMap[2][11] = 1;
     m_RegionMap[1][0] = 0;
-    m_RegionMap[1][3] = 0;
     m_RegionMap[3][0] = 0;
-    m_RegionMap[3][3] = 0;
+    m_RegionMap[1][7] = 0;
+    m_RegionMap[3][7] = 0;
+
 }
 /////////////
 /// \brief TexProcess::update call update if AreaSettings has changed
