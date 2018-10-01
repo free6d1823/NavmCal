@@ -101,6 +101,8 @@ void Control2::loadCamera(int cam)
         gpMainWin->setImage(pImage);
         nfImage::dettach(&pImage);//ImageWin will free the buffer
         gpMainWin->sendMessage(MESSAGE_VIEW_SET_CAMERAID, (long) cam);
+
+
     }
     updateUi();
 }
@@ -193,6 +195,15 @@ void Control2::start()
 {
     gpMainWin->changeView(mPanelTypeId);
     onCamera0();
+    gpMainWin->sendMessage(MESSAGE_VIEW_SCALE_1000IMAGE,
+                            (long)(gpMainWin->getCurrentZoomFactor()*1000.0));
+
+    gpMainWin->sendMessage(MESSAGE_VIEW_SHOW_FEATUREPOINTS,
+                           (ui->checkShowFp->checkState() == Qt::Checked?1:0));
+    gpMainWin->sendMessage(MESSAGE_VIEW_SHOW_GRIDELINES,
+                           (ui->checkShowGrideLines->checkState() == Qt::Checked?1:0));
+
+
 }
 ///
 /// \brief stop to do things before this step is fnished

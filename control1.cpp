@@ -114,7 +114,13 @@ void Control1::onCamera3(){
 void Control1::start()
 {
     gpMainWin->changeView(mPanelTypeId);
-    onCamera0();
+    onCamera0();//after this iamge is available, zoom to current ZoomFactor
+    gpMainWin->sendMessage(MESSAGE_VIEW_SCALE_1000IMAGE,
+                            (long)(gpMainWin->getCurrentZoomFactor()*1000.0));
+
+    gpMainWin->sendMessage(MESSAGE_VIEW_SHOW_FEATUREPOINTS,
+                           (ui->checkBox->checkState() == Qt::Checked?1:0));
+
 }
 ///
 /// \brief stop to do things before this step is fnished

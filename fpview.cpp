@@ -44,6 +44,9 @@ SingleView::~SingleView()
 void SingleView::processMessage(unsigned int command, long data)
 {
     switch (command) {
+    case MESSAGE_VIEW_SCALE_1000IMAGE:
+        scaleImage(((double)data)/1000);
+        break;
     case MESSAGE_VIEW_SET_CAMERAID:
         mCamId = (int ) data;
         if(mShowFp){
@@ -75,17 +78,13 @@ void SingleView::doAutoDetection()
 void SingleView::loadFps()
 {
     if(gpTexProcess && mCamId >=0 && mCamId <MAX_CAMERAS){
-        AreaSettings* pAs = & gpTexProcess->mAreaSettings[mCamId];
         //normalize
-        if (pAs->fpf[3].x > 10 || pAs->fpf[3].y > 10)
-        { //normalize to [0,1]
-            for (int i=0; i<pAs->nFpCounts; i++){
-                pAs->fpf[i].x /= (float)mImage.width();
-                pAs->fpf[i].y /= (float)mImage.height();
-            }
+        if (gpTexProcess->getDataState(mCamId) < DATA_STATE_FPF){
+            gpTexProcess->normalizeFpf(mCamId);
         }
         //
         mFpsList.clear();
+        AreaSettings* pAs = & gpTexProcess->mAreaSettings[mCamId];
         for (int i=0; i<pAs->nFpCounts; i++){
             mFpsList.push_back(pAs->fpf[i]);
         }
@@ -186,6 +185,9 @@ void FecView::applyFec(nfPByte pSrc, int width, int inStride,  int height,
 void FecView::processMessage(unsigned int command, long data)
 {
     switch (command) {
+    case MESSAGE_VIEW_SCALE_1000IMAGE:
+        scaleImage(((double)data)/1000);
+        break;
     case MESSAGE_VIEW_SET_CAMERAID:
         mCamId = (int ) data;
         //do update FEC, intent ignore "break" here
@@ -223,21 +225,13 @@ void FecView::processMessage(unsigned int command, long data)
 void FecView::loadFps()
 {
     if(gpTexProcess && mCamId >=0 && mCamId <MAX_CAMERAS){
-        AreaSettings* pAs = & gpTexProcess->mAreaSettings[mCamId];
-        //normalize
-        if (pAs->fpf[3].x > 10 || pAs->fpf[3].y > 10)
-        {
-            QMessageBox::information(this, QGuiApplication::applicationDisplayName(),
-                                     tr("Please run Step 1 and show feature points first!"));
-            return;
-        }
-        //update fps
-        for (int i=0; i<pAs->nFpCounts; i++){
-            nfInvFec(pAs->fpf[i].x, pAs->fpf[i].y, pAs->fps[i].x, pAs->fps[i].y, &pAs->fec);
+        if (gpTexProcess->getDataState(mCamId) < DATA_STATE_FPF){
+            gpTexProcess->normalizeFpf(mCamId);
         }
 
-        //
+        gpTexProcess->calculateFps(mCamId);
         mFpsList.clear();
+        AreaSettings* pAs = & gpTexProcess->mAreaSettings[mCamId];
         for (int i=0; i<pAs->nFpCounts; i++){
             mFpsList.push_back(pAs->fps[i]);
         }
@@ -310,14 +304,8 @@ void HomoView::setImage(nfImage* pSource)
 static void applyAll(int camId, nfPByte pSrc, int width, int inStride,  int height,
                        nfPByte pTar, int outWidth, int OutHeight, int outStride)
 {
-    AreaSettings* pAs = & gpTexProcess->mAreaSettings[camId];
-    if(pAs->nFpAreaCounts == 16)
-        nfCalculateHomoMatrix16(pAs->fps, pAs->fpt, pAs->homo);
-    else if (pAs->nFpAreaCounts == 12)
-        nfCalculateHomoMatrix12(pAs->fps, pAs->fpt, pAs->homo);
-    else
-        nfCalculateHomoMatrix4(pAs->fps, pAs->fpt, pAs->homo);
 
+    AreaSettings* pAs = & gpTexProcess->mAreaSettings[camId];
 
     float x,y,u,v;
     int nX, nY;
@@ -361,6 +349,14 @@ void HomoView::udateImage()
 
     nfPByte pOutBuffer = (nfPByte)malloc(HOMO_IMAGE_WIDTH*HOMO_IMAGE_HEIGHT*4);
     memset(pOutBuffer, 0, HOMO_IMAGE_WIDTH*HOMO_IMAGE_HEIGHT*4);
+    if (gpTexProcess->getDataState(mCamId) < DATA_STATE_FPF){
+        gpTexProcess->normalizeFpf(mCamId);
+    }
+    if (gpTexProcess->getDataState(mCamId) < DATA_STATE_FPS){
+        gpTexProcess->calculateFps(mCamId);
+    }
+
+    gpTexProcess->calculateHomo(mCamId);
     applyAll(mCamId, mpSourceImage->buffer, mpSourceImage->width, mpSourceImage->stride,
             mpSourceImage->height, pOutBuffer, HOMO_IMAGE_WIDTH, HOMO_IMAGE_HEIGHT, HOMO_IMAGE_WIDTH*4);
 
@@ -373,6 +369,9 @@ void HomoView::udateImage()
 void HomoView::processMessage(unsigned int command, long data)
 {
     switch (command) {
+    case MESSAGE_VIEW_SCALE_1000IMAGE:
+        scaleImage(((double)data)/1000);
+        break;
     case MESSAGE_VIEW_SET_CAMERAID:
         mCamId = (int ) data;
         udateImage();
@@ -497,6 +496,9 @@ void AllView::processMessage(unsigned int command, long data)
         mShowCam[3] = (data != 0);
         udateImage();
         break;
+    case MESSAGE_VIEW_SCALE_1000IMAGE:
+        scaleImage(((double)data)/1000);
+        break;
     }
 }
 ///
@@ -540,6 +542,16 @@ void AllView::udateImage()
     for (int m = 0; m < MAX_CAMERAS; m++) {
         if (mShowCam[m]) {
             nfImage* pSource = RefImagebyArea(m);
+            if (gpTexProcess->getDataState(m) < DATA_STATE_FPF){
+                gpTexProcess->normalizeFpf(m);
+            }
+            if (gpTexProcess->getDataState(m) < DATA_STATE_FPS){
+                gpTexProcess->calculateFps(m);
+            }
+            if (gpTexProcess->getDataState(m) < DATA_STATE_HOMO){
+                gpTexProcess->calculateHomo(m);
+            }
+
             applyAll(m, pSource->buffer, pSource->width, pSource->stride,
                     pSource->height, pOut->buffer, HOMO_IMAGE_WIDTH, HOMO_IMAGE_HEIGHT, HOMO_IMAGE_WIDTH*4);
 

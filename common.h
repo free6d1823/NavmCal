@@ -61,6 +61,11 @@ typedef struct _HomoParam{
     float h[3][3];     /*!<Homography Matrix coef. of the region */
 }HomoParam;
 
+#define DATA_STATE_INIT 0 /* data not loaded */
+#define DATA_STATE_LOADED 1 /*data read from ini file */
+#define DATA_STATE_FPF    2 /* FPF is normalized */
+#define DATA_STATE_FPS    3 /* FPS is colculated */
+#define DATA_STATE_HOMO   4 /* Homo coefficients are updated. Done */
 typedef struct _AreaSettings {
     nfRectF  range;                  /*!<the coordinates on final normalized image, 1.0x1.0 of this area  */
     FecParam fec;                   /*!<FEC applied to all area */
@@ -71,6 +76,7 @@ typedef struct _AreaSettings {
     int nFpAreaCounts;                /*!<numbers of FP areas in this camera, l.e. than MAX_FP_AREA*/
     nfRectF	region[MAX_FP_AREA];      /*!<the normalized coordinates of homo_region on final image*/
     HomoParam homo[MAX_FP_AREA];    /*!<homo apply to selected region */
+    int state; /*!<DATA_STATE_ */
 }AreaSettings;
 
 bool    LoadFecParam(FecParam* pFecParam, int nArea);
@@ -80,7 +86,7 @@ bool    SaveFecParam(FecParam* pFecParam, int nArea);
 bool    SaveHomoParam(HomoParam* pParam, int nArea, int nFp);
 bool    SaveAreaSettings(AreaSettings* pParam, int nArea);
 
-
+#ifndef ANDROID //used in calibration only
 #include "./imglab/ImgProcess.h"
 class TexProcess;
 class MainWindow;
@@ -97,6 +103,8 @@ extern nfImage* gpInputImage;
 
 /* inform FpView to set current camera id, pData = 0~3, camera id */
 #define MESSAGE_VIEW_SET_CAMERAID   0x0100
+/* inform FpView to scale image, pData = zoom-factor*1000 */
+#define MESSAGE_VIEW_SCALE_1000IMAGE   0x0101
 
 /* inform SingleView,FecView to show feature points, pData = 0 hide, 1 show */
 #define MESSAGE_VIEW_SHOW_FEATUREPOINTS 0x1000
@@ -118,7 +126,7 @@ extern nfImage* gpInputImage;
 /* inform AllView to stitch all camera images */
 #define MESSAGE_VIEW_DO_STITCHING 0x1024
 
-
+#endif //ANDROID the above commands are used in calibration only
 
 #endif //NAVMES3_COMMON_H_
 

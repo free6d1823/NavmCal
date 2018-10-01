@@ -254,6 +254,7 @@ void ImageWin::adjustSize( )
 
 void ImageWin::scaleImage(double factor)
 {
+    if(mImageLabel->pixmap())
     mImageLabel->resize(factor * mImageLabel->pixmap()->size());
     mHorzRuler->setRulerZoom(factor);
     mVertRuler->setRulerZoom(factor);

@@ -33,6 +33,9 @@ void Control0::start()
         gpMainWin->setImage(gpInputImage);
     }
     gpMainWin->changeView(mPanelTypeId);
+    gpMainWin->sendMessage(MESSAGE_VIEW_SCALE_1000IMAGE,
+                            (long)(gpMainWin->getCurrentZoomFactor()*1000.0));
+
 }
 ///
 /// \brief stop to do things before this step is fnished

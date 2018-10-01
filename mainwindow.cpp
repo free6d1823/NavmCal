@@ -106,8 +106,8 @@ bool MainWindow::loadFile(const QString &fileName)
 void MainWindow::setImage(nfImage*  pImage)
 {
     if( mImageView[mCurImgViewId]) {
-        mZoomFactor = 1.0;
         mImageView[mCurImgViewId]->setImage(pImage);
+        mImageView[mCurImgViewId]->update();
         mFitToWindowAct->setEnabled(true);
         updateActions();
 

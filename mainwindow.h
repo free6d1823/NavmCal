@@ -29,6 +29,7 @@ public:
     void changeView(int id);
     void setImage(nfImage*  pImage);
     void sendMessage(unsigned int command, long data);
+    double getCurrentZoomFactor(){ return mZoomFactor;}
 protected:
     void closeEvent(QCloseEvent *event) override;
 
