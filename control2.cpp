@@ -104,6 +104,7 @@ void Control2::loadCamera(int cam)
 
 
     }
+    gpMainWin->scaleImage(1);//update scrollbar and image to keep previous zoomfactor
     updateUi();
 }
 

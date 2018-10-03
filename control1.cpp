@@ -77,6 +77,7 @@ void Control1::loadCamera(int cam)
         gpMainWin->setImage(pImage);
         nfImage::dettach(&pImage);//releas buffer to receiver
         gpMainWin->sendMessage(MESSAGE_VIEW_SET_CAMERAID, (long) cam);
+        gpMainWin->scaleImage(1);//update scrollbar and image to keep previous zoomfactor
     }
 }
 

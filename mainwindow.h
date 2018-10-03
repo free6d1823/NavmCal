@@ -47,13 +47,14 @@ public slots:
      void onViewFitToWindow();
      void onViewShowRuler();
      void onHelpAbout();
+    void scaleImage(double factor);
 private:
     void createMenuAndToolbar();
     void createUi();
     void updateActions();
     bool saveFile(const QString &fileName);
 
-    void scaleImage(double factor);
+
     void adjustScrollBar(QScrollBar *scrollBar, double factor);
 
     Ui::MainWindow *ui;

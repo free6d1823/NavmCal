@@ -67,6 +67,7 @@ void Control3::loadCamera(int cam)
         nfImage::dettach(&pImage);//releas buffer to QImage
         gpMainWin->sendMessage(MESSAGE_VIEW_SET_CAMERAID, (long) cam);
     }
+    gpMainWin->scaleImage(1);//update scrollbar and image to keep previous zoomfactor
 }
 
 void Control3::onCamera0(){
