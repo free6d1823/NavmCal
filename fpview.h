@@ -95,11 +95,14 @@ public:
     explicit AllView(QWidget *parent = 0);
     ~AllView();
     virtual void processMessage(unsigned int command, long data);
-
+    virtual void onPostDraw(QPainter* painter);
+    QPolygonF findTrack(QRectF car, float angle);
 signals:
 
 private:
+    bool mShowCar;
     void udateImage();
     bool mShowCam[4];
+    float mSteerWheelAngle;
 };
 #endif // FPVIEW_H

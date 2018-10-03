@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>220</width>
-    <height>500</height>
+    <height>704</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -100,6 +100,41 @@
    </property>
    <property name="checked">
     <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="checkShowCar">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>300</y>
+     <width>181</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Show car</string>
+   </property>
+  </widget>
+  <widget class="QDial" name="steer">
+   <property name="geometry">
+    <rect>
+     <x>60</x>
+     <y>340</y>
+     <width>50</width>
+     <height>64</height>
+    </rect>
+   </property>
+   <property name="focusPolicy">
+    <enum>Qt::StrongFocus</enum>
+   </property>
+   <property name="minimum">
+    <number>-3500</number>
+   </property>
+   <property name="maximum">
+    <number>3500</number>
+   </property>
+   <property name="singleStep">
+    <number>1</number>
    </property>
   </widget>
  </widget>

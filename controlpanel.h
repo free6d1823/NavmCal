@@ -16,16 +16,16 @@ public:
         STEP_4 = 4,
         STEP_MAX
     };
-static ControlPanel* create(TYPE id, QWidget *parent = 0);
-    explicit ControlPanel(TYPE id, QWidget *parent = 0);
+static ControlPanel* create(TYPE id, QWidget *parent = NULL);
+    explicit ControlPanel(TYPE id, QWidget *parent = NULL);
     ///
     /// \brief start to prepare things when this step is started
     ///
-    virtual void start(){};
+    virtual void start(){}
     ///
     /// \brief stop to do things before this step is fnished
     ///
-    virtual void stop(){};
+    virtual void stop(){}
 signals:
 
 public slots:
@@ -191,13 +191,15 @@ public:
     /// \brief stop to do things before this step is fnished
     ///
     virtual void stop();
+
 public slots:
     void onSave();
     void onShowCam0(bool show);
     void onShowCam1(bool show);
     void onShowCam2(bool show);
     void onShowCam3(bool show);
-
+    void onShowCar(bool show);
+    void setDirValue(int value);
 private:
     Ui::Control4 *ui;
 

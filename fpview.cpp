@@ -4,6 +4,7 @@
 #include "mainwindow.h"
 #include <QApplication>
 #include <QMessageBox>
+#include <QMatrix3x3>
 #define FEC_IMAGE_WIDTH 1000
 #define FEC_IMAGE_HEIGHT    1000
 #define HOMO_IMAGE_WIDTH 1000
@@ -469,6 +470,8 @@ AllView::AllView(QWidget *parent) : ImageWin(parent)
 {
 mShowCam[0] = mShowCam[1] = mShowCam[2] = mShowCam[3] = true;
     mViewType = 4;
+    mShowCar = false;
+    mSteerWheelAngle = 0;
 }
 AllView::~AllView()
 {
@@ -498,6 +501,18 @@ void AllView::processMessage(unsigned int command, long data)
         break;
     case MESSAGE_VIEW_SCALE_1000IMAGE:
         scaleImage(((double)data)/1000);
+        break;
+    case MESSAGE_VIEW_SHOW_FEATUREPOINTS:
+        if(data == 0) {
+            mShowCar = false;
+        }else {
+            mShowCar = true;
+        }
+        mImageLabel->update();
+        break;
+    case MESSAGE_VIEW_STEER_CHANGED100:
+        mSteerWheelAngle = ((float)data*M_PI/18000);
+        mImageLabel->update();
         break;
     }
 }
@@ -566,4 +581,79 @@ void AllView::udateImage()
     mImage = QImage(pOutBuffer,HOMO_IMAGE_WIDTH, HOMO_IMAGE_HEIGHT, QImage::Format_RGBA8888);
     mImageLabel->setPixmap(QPixmap::fromImage(mImage));
     mImageLabel->update();*/
+}
+QPointF doTransform(QPointF p, QPointF ct, float ang)
+{
+    float px = p.x()- ct.x();
+    float py = p.y() - ct.y();
+    float tx, ty;
+    tx = px * cos(ang) - py* sin(ang) + ct.x();
+    ty = px * sin(ang) + py*cos(ang) + ct.y();
+    return QPointF(tx,ty);
+}
+QPolygonF AllView::findTrack(QRectF car, float angle)
+{
+    /* CAR parameters
+     *  |-      O          O    -|
+     *  |   a   |    b     |  c  |
+     *  |       |--------- +     d
+     *  |       |          |     |
+     *  |_      O          O    _|
+     */
+#define a 0.1862f
+#define b 0.5967f
+#define c 0.2171f
+    float d = (float) car.width();
+    float R1 = abs((float)b/(float) tan(mSteerWheelAngle) )* (float)car.height();
+    float xCarOrg = car.left() + d/2;
+    float yCarOrg = car.top()+ b* car.height();
+    QPointF center;
+    float xRCenter;
+    if(mSteerWheelAngle > 0){
+        center.setX(xCarOrg+ R1);
+        angle = -angle;
+    }else {
+        center.setX(xCarOrg - R1);
+    }
+    center.setY(yCarOrg);
+
+    QPolygonF newCar;
+    QPointF p1 = doTransform(car.topLeft(), center,  angle);
+    newCar.append(p1);
+    QPointF p = doTransform(car.bottomLeft(), center,  angle);
+    newCar.append(p);
+    p = doTransform(car.bottomRight(), center,  angle);
+    newCar.append(p);
+    p = doTransform(car.topRight(), center,  angle);
+    newCar.append(p);
+    newCar.append(p1);
+
+    return newCar;
+}
+
+void AllView::onPostDraw(QPainter* painter)
+{
+    QRect rcTarget = mImageLabel->rect();
+    QRectF rcCar;
+    rcCar.setRect(rcTarget.width()*0.4, rcTarget.height()*0.23, rcTarget.width()*.2, rcTarget.height()*.5);
+
+    if (mSteerWheelAngle != 0) {
+        QPen pen1;
+        pen1.setWidth(3);
+        pen1.setColor(Qt::yellow);
+        painter->setPen(pen1);
+
+        for (float i = -60; i <60; i+=4)
+        {
+            QPolygonF rcShadow = findTrack(rcCar, -i*M_PI/180);
+            painter->drawPolyline(rcShadow);
+        }
+    }
+
+    if( mShowCar) {
+        QImage car = QImage(":/images/NavmCal.png");
+        painter->drawImage(rcCar, car, QRectF(QPointF(0,0), car.size()));
+               
+    }
+
 }

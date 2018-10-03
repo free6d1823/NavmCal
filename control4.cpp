@@ -13,6 +13,12 @@ Control4::Control4(TYPE id,QWidget *parent) :
     connect(ui->checkShowCam1, SIGNAL(toggled(bool)), SLOT(onShowCam1(bool)));
     connect(ui->checkShowCam2, SIGNAL(toggled(bool)), SLOT(onShowCam2(bool)));
     connect(ui->checkShowCam3, SIGNAL(toggled(bool)), SLOT(onShowCam3(bool)));
+    connect(ui->checkShowCar, SIGNAL(toggled(bool)), SLOT(onShowCar(bool)));
+//    connect(ui->dirSlider, SIGNAL(valueChanged(int value)), this, SLOT(onSteerChanged(int)));
+
+    connect(ui->steer, SIGNAL(valueChanged(int)),
+            this, SLOT(setDirValue(int)));
+
 }
 
 Control4::~Control4()
@@ -35,6 +41,15 @@ void Control4::onShowCam3(bool show)
 {
     gpMainWin->sendMessage(MESSAGE_VIEW_SHOW_CAMERA3, (show?1:0));
 }
+void Control4::onShowCar(bool show)
+{
+    gpMainWin->sendMessage(MESSAGE_VIEW_SHOW_FEATUREPOINTS, (show?1:0));
+}
+void Control4::setDirValue(int value)
+{
+    gpMainWin->sendMessage(MESSAGE_VIEW_STEER_CHANGED100, value);
+}
+
 ///
 /// \brief start to prepare things when this step is started
 ///

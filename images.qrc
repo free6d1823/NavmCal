@@ -20,5 +20,6 @@
         <file>images/cam3.png</file>
         <file>images/cam2.png</file>
         <file>images/cam1.png</file>
+        <file>images/NavmCal.png</file>
     </qresource>
 </RCC>
