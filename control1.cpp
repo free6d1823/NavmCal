@@ -2,13 +2,23 @@
 #include "ui_control1.h"
 #include "mainwindow.h"
 #include "common.h"
+#include <stdlib.h>
 
 Control1::Control1(TYPE id,QWidget *parent) :
     ControlPanel(id, parent),
     ui(new Ui::Control1)
 {
+    mEditMode = EM_NONE;
     ui->setupUi(this);
     createUi();
+    updateUi();
+    ui->btnRoi->setEnabled(false);
+    ui->btnManual->setEnabled(false);
+    ui->btnAuto->setEnabled(false);
+    ui->btnLink->setEnabled(false);
+    ui->sliderThreshold->setEnabled(false);
+    ui->btnAccept->setEnabled(false);
+    ui->btnReset->setEnabled(false);
 }
 
 Control1::~Control1()
@@ -23,9 +33,26 @@ void Control1::createUi()
     connect(ui->rearCam, SIGNAL(clicked()), SLOT(onCamera2()));
     connect(ui->leftCam, SIGNAL(clicked()), SLOT(onCamera3()));
     connect(ui->checkBox, SIGNAL(toggled(bool)), SLOT(onShowFp(bool)));
-    connect(ui->pushButton, SIGNAL(clicked()), SLOT(onAutoDetection()));
+    connect(ui->btnAuto, SIGNAL(clicked()), SLOT(onAutoMode()));
+    connect(ui->btnRoi , SIGNAL(clicked()), SLOT(onRoiMode()));
+    connect(ui->btnManual , SIGNAL(clicked()), SLOT(onManualMode()));
+    connect(ui->btnLink , SIGNAL(clicked()), SLOT(onLinkMode()));
+    connect(ui->btnAccept , SIGNAL(clicked()), SLOT(onAccept()));
+    connect(ui->btnReset , SIGNAL(clicked()), SLOT(onReset()));
+    connect(ui->sliderThreshold, SIGNAL(valueChanged(int)),
+            this, SLOT(setThreshold(int)));
+
 
 }
+void Control1::updateUi()
+{
+        ui->btnRoi->setChecked(mEditMode == EM_ROI);
+        ui->btnAuto->setChecked(mEditMode == EM_AUTO);
+        ui->btnManual->setChecked(mEditMode == EM_MANUAL);
+        ui->btnLink->setChecked(mEditMode == EM_LINK);
+
+}
+
 /*   Image location vs id :
  *   front(0) | right(1) |
  *   left(3)  | rear(2)  |
@@ -79,6 +106,9 @@ void Control1::loadCamera(int cam)
         gpMainWin->sendMessage(MESSAGE_VIEW_SET_CAMERAID, (long) cam);
         gpMainWin->scaleImage(1);//update scrollbar and image to keep previous zoomfactor
     }
+    char buffer[64];
+    sprintf(buffer, "Max Feature Points %d", gpTexProcess->mAreaSettings[mCamId].nFpCounts);
+    ui->labelLink->setText(buffer);
 }
 
 void Control1::onCamera0(){
@@ -130,11 +160,71 @@ void Control1::stop()
 {
 
 }
+
 void Control1::onShowFp(bool show)
 {
     gpMainWin->sendMessage(MESSAGE_VIEW_SHOW_FEATUREPOINTS, (show?1:0));
+    if (show == false){
+        mEditMode = EM_NONE;
+        ui->btnRoi->setEnabled(false);
+        ui->btnManual->setEnabled(false);
+        ui->btnAuto->setEnabled(false);
+        ui->btnLink->setEnabled(false);
+        ui->sliderThreshold->setEnabled(false);
+        ui->btnAccept->setEnabled(false);
+        ui->btnReset->setEnabled(false);
+    }else {
+        ui->btnRoi->setEnabled(true);
+        ui->btnManual->setEnabled(true);
+        ui->btnAuto->setEnabled(true);
+        ui->btnLink->setEnabled(true);
+        ui->sliderThreshold->setEnabled(true);
+        ui->btnAccept->setEnabled(true);
+        ui->btnReset->setEnabled(true);
+    }
+    updateUi();
 }
-void Control1::onAutoDetection()
+void Control1::onAutoMode()
 {
-    gpMainWin->sendMessage(MESSAGE_VIEW_DO_AUTODETECTION, 0);
+    mEditMode = EM_AUTO;
+    gpMainWin->sendMessage(MESSAGE_VIEW_SET_AUTO_MODE,
+                           ui->sliderThreshold->value());
+    updateUi();
+}
+
+void Control1::onRoiMode()
+{
+    mEditMode = EM_ROI;
+    updateUi();
+    gpMainWin->sendMessage(MESSAGE_VIEW_SET_ROI_MODE, 0);
+}
+void Control1::onManualMode()
+{
+    mEditMode = EM_MANUAL;
+    updateUi();
+    gpMainWin->sendMessage(MESSAGE_VIEW_SET_MANUAL_MODE, 0);
+}
+void Control1::onLinkMode()
+{
+    mEditMode = EM_LINK;
+    updateUi();
+    gpMainWin->sendMessage(MESSAGE_VIEW_SET_LINK_MODE, 0);
+}
+void Control1::onAccept()
+{
+    gpMainWin->sendMessage(MESSAGE_VIEW_DO_ACCEPT, 0);
+}
+void Control1::onReset()
+{
+    mEditMode = EM_NONE;
+    updateUi();
+    gpMainWin->sendMessage(MESSAGE_VIEW_DO_RESET, 0);
+
+}
+
+void Control1::setThreshold(int value)
+{
+    char buffer[32];
+    sprintf(buffer, "%d", value);
+    ui->labelThreshold->setText(buffer);
 }

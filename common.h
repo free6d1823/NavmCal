@@ -108,8 +108,18 @@ extern nfImage* gpInputImage;
 
 /* inform SingleView,FecView to show feature points, pData = 0 hide, 1 show */
 #define MESSAGE_VIEW_SHOW_FEATUREPOINTS 0x1000
-/* request SingleView do feature points autodetection, pData don't care */
-#define MESSAGE_VIEW_DO_AUTODETECTION   0x1001
+
+#define MESSAGE_VIEW_SET_ROI_MODE   0x1001
+#define MESSAGE_VIEW_SET_MANUAL_MODE   0x1002
+/* inform SingleView to in AutoDetection Feature Points mode, pData = threshold*/
+#define MESSAGE_VIEW_SET_AUTO_MODE   0x1003
+#define MESSAGE_VIEW_SET_LINK_MODE   0x1004
+/* inform SingleView to write current UI to settings */
+#define MESSAGE_VIEW_DO_ACCEPT   0x1005
+/* inform SingleView to clear all feature points */
+#define MESSAGE_VIEW_DO_RESET   0x1006
+
+
 /* request FecView to apply new FEC parameters from setrtings, pData don't care */
 #define MESSAGE_VIEW_UPDATE_FEC   0x1010
 /* inform FecView to show feature points, pData = 0 hide, 1 show */

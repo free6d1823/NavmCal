@@ -2,6 +2,7 @@
 #include <QLabel>
 #include "imagewin.h"
 #include <QGridLayout>
+#include <QScrollBar>
 #include "common.h"
 #include "fpview.h"
 /*******************************************/
@@ -170,7 +171,7 @@ void ImageView::paintEvent(QPaintEvent* event)
 }
 /*******************************************/
 ImageWin::ImageWin(QWidget *parent) : QScrollArea(parent),
-    mImageLabel(new ImageView)
+    mImageLabel(new ImageView),mZoomFactor(1.0)
 {
 
     mImageLabel->setBackgroundRole(QPalette::Base);
@@ -218,7 +219,14 @@ void ImageWin::showRulers(bool bShow)
      else
          setViewportMargins(0,0,0,0);
 }
+QPoint ImageWin::getScrollPosition()
+{
+    QPoint pt;
+    pt.setX(horizontalScrollBar()->value());
+    pt.setY(verticalScrollBar()->value());
+    return pt;
 
+}
 bool ImageWin::isRulersShown()
 {
       return mHorzRuler->isVisible();
@@ -245,20 +253,21 @@ void ImageWin::setImage(nfImage*  pSource)
             pSource->width, pSource->height, QImage::Format_RGBA8888);
 
     mImageLabel->setPixmap(QPixmap::fromImage(mImage));
+    mZoomFactor = 1.0;
     setVisible(true);
 }
 void ImageWin::adjustSize( )
 {
      mImageLabel->adjustSize();
 }
-
+double ImageWin::getZoomFactor(){return mZoomFactor;}
 void ImageWin::scaleImage(double factor)
 {
     if(mImageLabel->pixmap())
     mImageLabel->resize(factor * mImageLabel->pixmap()->size());
     mHorzRuler->setRulerZoom(factor);
     mVertRuler->setRulerZoom(factor);
-
+    mZoomFactor = factor;
 }
 ImageWin* ImageWin::createImageView(int id, QWidget *parent)
 {

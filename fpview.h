@@ -4,7 +4,28 @@
 #include "imagewin.h"
 #include "common.h"
 #include <vector>
+#include "controlpanel.h"
+
 using namespace std;
+
+
+#define FEC_IMAGE_WIDTH 1000
+#define FEC_IMAGE_HEIGHT    1000
+#define HOMO_IMAGE_WIDTH 1000
+#define HOMO_IMAGE_HEIGHT 1000
+#define FP_COLOR    (Qt::red)
+#define FP_WIDTH 5
+#define GRIDELINE_WIDTH 1
+#define GRIDELINE_COLOR Qt::blue
+#define ROI_COLOT   (Qt::yellow)
+#define ROI_WIDTH   3
+#define LINK_COLOR  (Qt::darkblue)
+#define LINK_WIDTH  2
+#define SELECTED_COLOR QColor(255,128,0)
+
+#define REGION_COLOR  (Qt::blue)
+#define TRACK_COLOR  (Qt::yellow)
+#define TRACK_WIDTH 2
 
 class SourceView : public ImageWin
 {
@@ -25,15 +46,31 @@ public:
     ~SingleView();
     virtual void processMessage(unsigned int command, long data);
     virtual void onPostDraw(QPainter* painter);
+    void mouseMoveEvent(QMouseEvent *event);
+    void mousePressEvent(QMouseEvent *event);
+    void mouseDoubleClickEvent(QMouseEvent *event);
+    void mouseReleaseEvent(QMouseEvent *event);
 signals:
 
 public slots:
 private:
+    int  isHitFp(QPointF pt);
     void loadFps();
-    void doAutoDetection();
+    void doAutoDetection(int threshold);
+    void doFpLink();
+    void setEditMode(Control1::EditMode mode);
     bool mShowFp;
     int mCamId;
-    vector <nfFloat2D> mFpsList;
+    vector <nfFloat2D> mFpsList; /* final FP candidates */
+
+    Control1::EditMode mMode;
+    QRectF mRectRoi[MAX_CAMERAS];
+    QPointF mPtStart;
+    vector <nfFloat2D> mFpCandidates[MAX_CAMERAS]; /* detected FP candidates */
+    int mSelectedIndex; /* selected FP index */
+    vector <nfRectF> mRegionList[MAX_CAMERAS];
+
+    bool mDrag;
 };
 class FecView : public ImageWin
 {

@@ -124,10 +124,11 @@ class ImageWin : public QScrollArea
 public:
 static     ImageWin* createImageView(int id, QWidget *parent = 0);
 static void PostDrwCallback(ImageWin* owner, QPainter* painter){
-    owner->onPostDraw(painter);
-}
+                owner->onPostDraw(painter);}
     explicit ImageWin(QWidget *parent = 0);
     ~ImageWin();
+    double getZoomFactor();
+    QPoint getScrollPosition();
     void scrollContentsBy(int dx, int dy);
     void mouseMoveEvent(QMouseEvent* event);
 
@@ -146,7 +147,7 @@ protected:
     QDRuler* mHorzRuler;
     QDRuler* mVertRuler;
     QWidget* mRulerCorner;
-
+    double mZoomFactor;
 
 };
 

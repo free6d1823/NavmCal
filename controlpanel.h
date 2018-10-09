@@ -80,17 +80,36 @@ public:
     /// \brief stop to do things before this step is fnished
     ///
     virtual void stop();
+    enum EditMode {
+        EM_NONE = 0,
+        EM_ROI = 1,
+        EM_MANUAL = 2,
+        EM_AUTO = 3,
+        EM_LINK = 4
+    };
 public slots:
     void onCamera0();
     void onCamera1();
     void onCamera2();
     void onCamera3();
     void onShowFp(bool show);
-    void onAutoDetection();
+    void onAutoMode();
+    void onRoiMode();
+    void onManualMode();
+    void onLinkMode();
+    void onAccept();
+    void onReset();
+    void setThreshold(int value);
+
 private:
     void loadCamera(int cam);
     void createUi();
+    void updateUi();
     Ui::Control1 *ui;
+
+    EditMode mEditMode;
+
+
 };
 //////////////////////////////////////////
 namespace Ui {

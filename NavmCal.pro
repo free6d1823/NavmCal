@@ -36,7 +36,9 @@ SOURCES += main.cpp\
     controlpanel.cpp \
     control3.cpp \
     control4.cpp \
-    fpview.cpp
+    view1.cpp \
+    view2.cpp \
+    view34.cpp
 
 HEADERS  += mainwindow.h \
     imagewin.h \
