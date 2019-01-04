@@ -14,7 +14,8 @@ using namespace std;
 #define HOMO_IMAGE_WIDTH 1000
 #define HOMO_IMAGE_HEIGHT 1000
 #define FP_COLOR    (Qt::red)
-#define FP_WIDTH 5
+#define FP_WIDTH 7
+#define FP_TEXT_COLOR (QColor(0x00,0x88,0xff))
 #define GRIDELINE_WIDTH 1
 #define GRIDELINE_COLOR Qt::blue
 #define ROI_COLOT   (Qt::yellow)
@@ -22,16 +23,20 @@ using namespace std;
 #define LINK_COLOR  (Qt::darkblue)
 #define LINK_WIDTH  2
 #define SELECTED_COLOR QColor(255,128,0)
+#define TOOL_COLOR   QColor(255,255,0)
+#define TOOL_WIDTH   2
 
 #define REGION_COLOR  (Qt::blue)
-#define TRACK_COLOR  (Qt::yellow)
 #define TRACK_WIDTH 2
+#define TRACK_COLOR1  (Qt::red)
+#define TRACK_COLOR2  (Qt::yellow)
+#define TRACK_COLOR3  (Qt::green)
 
 class SourceView : public ImageWin
 {
     Q_OBJECT
 public:
-    explicit SourceView(QWidget *parent = 0);
+    explicit SourceView(QWidget *parent = nullptr);
     ~SourceView();
 signals:
 
@@ -42,7 +47,7 @@ class SingleView : public ImageWin
 {
     Q_OBJECT
 public:
-    explicit SingleView(QWidget *parent = 0);
+    explicit SingleView(QWidget *parent = nullptr);
     ~SingleView();
     virtual void processMessage(unsigned int command, long data);
     virtual void onPostDraw(QPainter* painter);
@@ -56,32 +61,36 @@ public slots:
 private:
     int  isHitFp(QPointF pt);
     void loadFps();
+    void saveFps();
     void doAutoDetection(int threshold);
     void doFpLink();
     void setEditMode(Control1::EditMode mode);
     bool mShowFp;
     int mCamId;
-    vector <nfFloat2D> mFpsList; /* final FP candidates */
 
     Control1::EditMode mMode;
     QRectF mRectRoi[MAX_CAMERAS];
     QPointF mPtStart;
-    vector <nfFloat2D> mFpCandidates[MAX_CAMERAS]; /* detected FP candidates */
+    vector <nfFloat2D> mFpCandidates[MAX_CAMERAS];
     int mSelectedIndex; /* selected FP index */
     vector <nfRectF> mRegionList[MAX_CAMERAS];
 
+    int mNextLinkIndex; /* current focus link FP index */
     bool mDrag;
 };
 class FecView : public ImageWin
 {
     Q_OBJECT
 public:
-    explicit FecView(QWidget *parent = 0);
+    explicit FecView(QWidget *parent = nullptr);
     ~FecView();
     virtual void processMessage(unsigned int command, long data);
     virtual void onPostDraw(QPainter* painter);
     /*<! handle image be FecView itself */
     virtual void setImage(nfImage* pSource);
+    void mouseMoveEvent(QMouseEvent *event);
+    void mousePressEvent(QMouseEvent *event);
+    void mouseReleaseEvent(QMouseEvent *event);
 signals:
 
 public slots:
@@ -97,13 +106,15 @@ private:
     nfImage* mpSourceImage;
     vector <nfFloat2D> mFpsList;
     nfFloat2D mCenter;
-
+    /*gride lines */
+    QLineF mCurGrideLine;
+    bool mDrag;
 };
 class HomoView : public ImageWin
 {
     Q_OBJECT
 public:
-    explicit HomoView(QWidget *parent = 0);
+    explicit HomoView(QWidget *parent = nullptr);
     ~HomoView();
     virtual void processMessage(unsigned int command, long data);
     virtual void onPostDraw(QPainter* painter);
@@ -129,17 +140,18 @@ class AllView : public ImageWin
 {
     Q_OBJECT
 public:
-    explicit AllView(QWidget *parent = 0);
+    explicit AllView(QWidget *parent = nullptr);
     ~AllView();
     virtual void processMessage(unsigned int command, long data);
     virtual void onPostDraw(QPainter* painter);
-    QPolygonF findTrack(QRectF car, float angle);
+    QPolygonF findTrack(QRectF car, double angle);
+    QPolygonF findTrack2(QRectF car, double dist1, double dist2);
 signals:
 
 private:
     bool mShowCar;
     void udateImage();
     bool mShowCam[4];
-    float mSteerWheelAngle;
+    double mSteerWheelAngle;
 };
 #endif // FPVIEW_H

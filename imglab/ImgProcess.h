@@ -22,7 +22,7 @@
 
 using namespace std;
 
-#define SAFE_FREE(p) if(p) { free(p); p=NULL;}
+#define SAFE_FREE(p) if(p) { free(p); p=nullptr;}
 #define SAFE_ALLOC(p, n) { if(p) free(p); p=(typeof(p)) malloc(n);}
 
 class nfImage {

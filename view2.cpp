@@ -23,10 +23,11 @@ SourceView::~SourceView()
  * ==========================================================
  */
 FecView::FecView(QWidget *parent) : ImageWin(parent),mShowFp(false),
-    mShowGrideLines(false), mpSourceImage(NULL)
+    mShowGrideLines(false), mpSourceImage(nullptr)
 {
     mCamId = 0;
     mViewType = 2;
+    mDrag = false;
 }
 FecView::~FecView()
 {
@@ -121,7 +122,10 @@ void FecView::processMessage(unsigned int command, long data)
         }
         mImageLabel->update();
         break;
-
+    case MESSAGE_VIEW_CLEAR_GRIDELINES:
+        mCurGrideLine.setLength(0.0);
+        mImageLabel->update();
+        break;
     default:
         break;
     }
@@ -176,6 +180,53 @@ void FecView::onPostDraw(QPainter* painter)
             painter->drawPoint(fps[i]);
         }
 
-
+        //draw gride lines
+        if (mCurGrideLine.length() > 0.0) {
+            QPen pen;
+            pen.setWidth(TOOL_WIDTH);
+            pen.setColor(TOOL_COLOR);
+            painter->setPen(pen);
+            QPointF pt1;
+            QPointF pt2;
+            pt1.setX(mCurGrideLine.p1().x() * rcTarget.width());
+            pt1.setY(mCurGrideLine.p1().y()* rcTarget.height());
+            pt2.setX(mCurGrideLine.p2().x() * rcTarget.width());
+            pt2.setY(mCurGrideLine.p2().y()* rcTarget.height());
+            painter->drawLine(pt1, pt2);
+        }
     }
+}
+void FecView::mouseMoveEvent(QMouseEvent *event)
+{
+
+    if (mDrag) {
+        QPointF pt = event->pos();
+        QRect rcImage =  mImageLabel->rect();
+        pt.setX((pt.x() - rcImage.left()+getScrollPosition().x())/rcImage.width());
+        pt.setY((pt.y() - rcImage.top()+getScrollPosition().y())/rcImage.height());
+
+        mCurGrideLine.setP2(pt);
+        mImageLabel->update();
+    }
+}
+void FecView::mousePressEvent(QMouseEvent *event)
+{
+    QPointF pt = event->pos();
+    QRect rcImage =  mImageLabel->rect();
+    pt.setX((pt.x() - rcImage.left()+getScrollPosition().x())/rcImage.width());
+    pt.setY((pt.y() - rcImage.top()+getScrollPosition().y())/rcImage.height());
+    mCurGrideLine.setP1(pt);
+    mCurGrideLine.setP2(pt);
+    mDrag = true;
+    mImageLabel->update();
+}
+void FecView::mouseReleaseEvent(QMouseEvent *event)
+{
+    QPointF pt = event->pos();
+    QRect rcImage =  mImageLabel->rect();
+    pt.setX((pt.x() - rcImage.left()+getScrollPosition().x())/rcImage.width());
+    pt.setY((pt.y() - rcImage.top()+getScrollPosition().y())/rcImage.height());
+    mCurGrideLine.setP2(pt);
+    mDrag = false;
+    mImageLabel->update();
 }

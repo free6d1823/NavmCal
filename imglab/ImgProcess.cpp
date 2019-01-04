@@ -33,13 +33,13 @@
 void nfYuyvToRgb32(nfImage* pYuv, unsigned char* pRgb, bool uFirst, bool bMirror)
 {
     //YVYU - format
-    int nBps = pYuv->width*4;//stride in RGB data
+    unsigned int nBps = pYuv->width*4;//stride in RGB data
     unsigned char* pY1 = pYuv->buffer;
 
     unsigned char* pV;
     unsigned char* pU;
 
-    int nStride = pYuv->stride;
+    unsigned int nStride = pYuv->stride;
     if (bMirror) {
         pY1 = pYuv->buffer +(pYuv->height-1)* pYuv->stride;
         nStride = -pYuv->stride;
@@ -91,10 +91,10 @@ nfImage* nfImage::create(unsigned int w, unsigned int h, unsigned int bpp)
     img->stride = w*bpp;
     img->height = h;
     img->bRef = false;
-    img->buffer = (unsigned char*)malloc( img->stride*h);
+    img->buffer = static_cast<unsigned char*>(malloc( img->stride*h));
     if (!img->buffer ) {
         delete img;
-        return NULL;
+        return nullptr;
     }
 
 //    printf ("nfInitImage#%d (%dx%d)\n", img->seq, w, h);
@@ -129,20 +129,19 @@ nfImage* nfImage::clone(nfImage* pSource)
 void nfImage::destroy(nfImage** ppImage)
 {
     if(*ppImage) {
-//printf("nfFreeImage,#%d - %dx%d\n", (*ppImage)->seq, (*ppImage)->width,(*ppImage)->height);
         if(!(*ppImage)->bRef)
             SAFE_FREE((*ppImage)->buffer);
         delete (*ppImage);
-        *ppImage = NULL;
+        *ppImage = nullptr;
     }
 }
 nfPByte nfImage::dettach(nfImage** ppImage)
 {
-    nfPByte pBuffer = NULL;
+    nfPByte pBuffer = nullptr;
     if(*ppImage) {
         pBuffer = (*ppImage)->buffer;
         delete (*ppImage);
-        *ppImage = NULL;
+        *ppImage = nullptr;
     }
     return pBuffer;
 }
@@ -167,7 +166,7 @@ nfFloatBuffer::nfFloatBuffer(unsigned int elements)
     mBpu = sizeof(float);
     mCounts = elements;
     mLength = mBpu* elements;
-    mpData = (float*) malloc(mLength);
+    mpData = static_cast<float*>(malloc(mLength));
 //    LOGI("nfFloatBuffer new %dx%d=%d mpData=%p", mBpu, elements, mLength, mpData);
 }
 nfFloatBuffer::~nfFloatBuffer()
@@ -183,7 +182,7 @@ void nfFloatBuffer::destroy(nfFloatBuffer** ppBuffer)
 {
     if(*ppBuffer) {
         delete (*ppBuffer);
-        *ppBuffer = NULL;
+        *ppBuffer = nullptr;
     }
 }
 /****************************************************************/
@@ -192,7 +191,7 @@ nfUshortBuffer::nfUshortBuffer(unsigned int elements)
     mBpu = sizeof(unsigned int);
     mCounts = elements;
     mLength = mBpu* elements;
-    mpData = (unsigned short*) malloc(mLength);
+    mpData = static_cast<unsigned short*>( malloc(mLength));
 //    LOGI("nfUshortBuffer new %dx%d=%d mpData=%p", mBpu, elements, mLength, mpData);
 }
 nfUshortBuffer::~nfUshortBuffer()
@@ -208,58 +207,64 @@ void nfUshortBuffer::destroy(nfUshortBuffer** ppBuffer)
 {
     if(*ppBuffer) {
         delete (*ppBuffer);
-        *ppBuffer = NULL;
+        *ppBuffer = nullptr;
     }
 }
 
 
-/* Fisheye model: Q =R*theda; P =f*tan(theda)=f*tan(Q/r)
- * boundary condition: R=0.5/wf, f = 0.5/tan(wr)
- * Q = 1/(2* wf) * atan(2* P * tan(wr))  where
- * Q = sqrt(x,y), x,y[-0.5,0.5] is pixel in fisheye,
- * P = sqrt(u,v), u,v[-0.5,0.5] is location at rectified image
- * wf is fisheye FOV/2, assume 90 degree
- * wr is fov/2 on rectified image
+/* Fisheye model: Fisheye plan Q(rq,x,y); Rectify plan P(rp,u,v)
+ * (1) rq/R = theda/(fov/2)
+ * (2) rp=f *tan(theda) where
+ * R=0.5, tan(fov/2) = R/f, therefore, fr=1/f= 2*tan(fov/2)
+ * theda = atan(rp*fr)
+ * rq = R* atan(rp*fr)/(fov/2) = atan(rp*fr)/fov;
+ * where
+ * rp = sqrt(u^2+v^2)
+ * x = u * rq/rp; y = v*rq/rp
 */
-#define WF  M_PI_2
 
 void nfDoFec(float u, float v, float &x, float &y, FecParam* pFec)
 {
     double  u1, v1;
     double x1,y1;
     //transform uu = M x u
-    u1 = u-0.5;
-    v1 = v-0.5;
+    u1 = static_cast<double>(u)-0.5;
+    v1 = static_cast<double>(v)-0.5;
     //////
     /// \brief do PTZ first
     ///
     double u2,v2;
-    double z = sin(pFec->pitch)*v1 + cos(pFec->pitch);
+    double z = sin(static_cast<double>(pFec->pitch))*v1 + cos(static_cast<double>(pFec->pitch));
     u2 = u1/z;
-    v2 = ( cos(pFec->pitch)*v1 - sin(pFec->pitch))/z;
+    v2 = ( cos(static_cast<double>(pFec->pitch))*v1 - sin(static_cast<double>(pFec->pitch)))/z;
     //yaw
-    z = -sin(pFec->yaw)*u2 + cos(pFec->yaw);
-    u2 = ( cos(pFec->yaw)*u2  + sin(pFec->yaw))/z;
+    z = -sin(static_cast<double>(pFec->yaw))*u2 + cos(static_cast<double>(pFec->yaw));
+    u2 = ( cos(static_cast<double>(pFec->yaw))*u2  + sin(static_cast<double>(pFec->yaw)))/z;
     v2 = v2/z;
 
     //spin - z-axis
-    u1 = cos(pFec->roll)* u2 - sin(pFec->roll)*v2;
-    v1 = sin(pFec->roll)* u2 + cos(pFec->roll)*v2;
+    u1 = cos(static_cast<double>(pFec->roll))* u2 - sin(static_cast<double>(pFec->roll))*v2;
+    v1 = sin(static_cast<double>(pFec->roll))* u2 + cos(static_cast<double>(pFec->roll))*v2;
 
-    //intrinsic
-    u1 = pFec->a*u1 + pFec->c*v1;		//x-scale and de-skewness
-    v1 = pFec->b*v1;								//y- scale
-
-    double fr = 2*tan(pFec->fov/2); //reverse of focus length of rectified image
+    double fr = 2*tan(static_cast<double>(pFec->fov/2)); //reverse of focus length of rectified image
     double rp = sqrt(u1*u1+v1*v1); //radius of point (u1,v1) on rectified image
     double rq;	//fisheye
 
     double rq1;
 
-    if(1) //fisheye
-        rq1 = atan(rp*fr)/(2*WF);		//[0.5]
-    else //normal lens
-        rq1 = rp; //if no fec
+    //if(1) //fisheye
+       rq1 = atan(rp*fr)/(static_cast<double>(pFec->fov));		//[0.5]
+          /*
+           *  w = pFec->fov
+           * r = rp = sqrt(u1*u1+v1*v1), R = 0.5
+           *
+           * 1              r*tan(w/2)
+           *--- 2R * acrtan[----------]
+           * w                   R
+           *
+           */
+   //else //normal lens
+   //    rq1 = rp; //if no fec
 
 
     if (rp <= 0) {
@@ -267,58 +272,61 @@ void nfDoFec(float u, float v, float &x, float &y, FecParam* pFec)
     } else {
         u1  = u1 * rq1/rp;
         v1  = v1 * rq1/rp;
-    //LDC
+        //LDC
         double rq2 = rq1*rq1;
-        rq  = (1+pFec->k1* rq2+ pFec->k2* rq2*rq2);
+        rq  = (1.0+static_cast<double>(pFec->k1)* rq2+ static_cast<double>(pFec->k2)* rq2*rq2);
         x1 = u1/rq;
         y1 = v1/rq;
+        //Do intrinsic after LDC
+        x1 = static_cast<double>(pFec->a)*x1+static_cast<double>(pFec->c)*y1; //x-scale and de-skewness
+        y1 = static_cast<double>(pFec->b)*y1;            //y-scale
     }
 
-    x = (x1+ pFec->ptCenter.x);
-    y = (y1+ pFec->ptCenter.y);
+    x = (static_cast<float>(x1)+ pFec->ptCenter.x);
+    y = (static_cast<float>(y1)+ pFec->ptCenter.y);
 
 }
 void nfInvFec(float x, float y, float &u, float &v, FecParam* pFec)
 {
-    float x1,y1;
-    x1 = x - pFec->ptCenter.x;
-    y1 = y - pFec->ptCenter.y;
+    double x1,y1;
+    x1 = static_cast<double>(x - pFec->ptCenter.x);
+    y1 = static_cast<double>(y - pFec->ptCenter.y);
+
+    //Do intrinsic before LDC
+    y1 = y1 / static_cast<double>(pFec->b);
+    x1 = (x1 - static_cast<double>(pFec->c)*y1)/static_cast<double>(pFec->a);
 
     //LDC -- a approcimate invers of LDC
     double rq, rq1, rq2, rp;
     rq2 = x1*x1 + y1*y1;
     double rqt = sqrt(rq2);
     //this approach has error less than 0.1% for small k
-    rq  = (1-pFec->k1* rq2- pFec->k2* rq2*rq2);
+    rq  = (1.0-static_cast<double>(pFec->k1)* rq2- static_cast<double>(pFec->k2)* rq2*rq2);
 
     double u1,v1,u2,v2;
     u1 = x1 /rq;
     v1 = y1 /rq;
     rq1 = rqt/rq; //rq1 = atan(rp*fr)/(2*WF);		//[0.5]
-    double fr = 2*tan(pFec->fov/2); //reverse of focus length of rectified image
-    rp = tan(rq1*2*WF)/fr;
+    double fr = 2.0*tan(static_cast<double>(pFec->fov)/2.0); //reverse of focus length of rectified image
+    rp = tan(rq1*static_cast<double>(pFec->fov))/fr;
     u1 = u1 * rp/ rq1;
     v1 = v1 * rp/rq1;
 
-    //intrinsic
-    v1 = v1 / pFec->b;
-    u1 = (u1 - pFec->c*v1)/pFec->a;
-
     //rev spin
-    u2 = cos(pFec->roll)* u1 + sin(pFec->roll)*v1;
-    v2 = - sin(pFec->roll)* u1 + cos(pFec->roll)*v1;
+    u2 = cos(static_cast<double>(pFec->roll))* u1 + sin(static_cast<double>(pFec->roll))*v1;
+    v2 = - sin(static_cast<double>(pFec->roll))* u1 + cos(static_cast<double>(pFec->roll))*v1;
     //rev
     double z;
     //yaw
-    z = 1/(sin(pFec->yaw)*u2 + cos(pFec->yaw));
-    u2 = (z*u2 - sin(pFec->yaw))/cos(pFec->yaw);
+    z = 1/(sin(static_cast<double>(pFec->yaw))*u2 + cos(static_cast<double>(pFec->yaw)));
+    u2 = (z*u2 - sin(static_cast<double>(pFec->yaw)))/cos(static_cast<double>(pFec->yaw));
     v2 = v2*z;
     //rev pitch
-    z = 1 /(cos(pFec->pitch) - sin(pFec->pitch)*v2);
+    z = 1 /(cos(static_cast<double>(pFec->pitch)) - sin(static_cast<double>(pFec->pitch))*v2);
     u1 = u2 * z;
-    v1 = (v2*z + sin(pFec->pitch) )/cos(pFec->pitch);
-    u = u1 + 0.5;
-    v = v1 + 0.5;
+    v1 = (v2*z + sin(static_cast<double>(pFec->pitch)) )/cos(static_cast<double>(pFec->pitch));
+    u = static_cast<float>(u1 + 0.5);
+    v = static_cast<float>(v1 + 0.5);
 }
 
 bool nfDoHomoTransform(float s, float t, float &u, float &v, float h[3][3])
@@ -326,7 +334,7 @@ bool nfDoHomoTransform(float s, float t, float &u, float &v, float h[3][3])
     u = h[0][0] * s +h[0][1]*t + h[0][2];
     v = h[1][0] * s + h[1][1]*t + h[1][2];
     float scale = h[2][0] * s + h[2][1]*t + 1;
-    if (scale != 0) {
+    if (scale != 0.0f) {
         u = u/scale;
         v = v/scale;
 //        if(u>=1 || v>=1 ||u<0 ||v <0)
@@ -345,14 +353,21 @@ void nfFindHomoMatrix(nfFloat2D s[4], nfFloat2D t[4], float hcoef[3][3])
     Mat b(1,8);
     int j=4;
     for (i=0;i<4;i++) {
-        A.Set(0,i, t[i].x); A.Set(1, i, t[i].y); A.Set(2,i,1); A.Set(3,i, 0); A.Set(4,i, 0); A.Set(5,i, 0);
-        A.Set(6,i, -t[i].x*s[i].x); A.Set(7, i, -t[i].y*s[i].x);
-        b.Set(0,i, s[i].x);
+        A.Set(0,i, static_cast<double>(t[i].x)); A.Set(1, i, static_cast<double>(t[i].y));
+        A.Set(2,i,1); A.Set(3,i, 0);
+        A.Set(4,i, 0); A.Set(5,i, 0);
+        A.Set(6,i, static_cast<double>(-t[i].x*s[i].x));
+        A.Set(7, i, static_cast<double>(-t[i].y*s[i].x));
+        b.Set(0,i, static_cast<double>(s[i].x));
 
-        A.Set(0,j, 0); A.Set(1,j, 0); A.Set(2,j, 0);
-        A.Set(3,j, t[i].x); A.Set(4, j, t[i].y); A.Set(5,j,1);
-        A.Set(6,j, -t[i].x*s[i].y); A.Set(7, j, -t[i].y*s[i].y);
-        b.Set(0,j, s[i].y);
+        A.Set(0,j, 0); A.Set(1,j, 0);
+        A.Set(2,j, 0);
+        A.Set(3,j, static_cast<double>(t[i].x));
+        A.Set(4, j, static_cast<double>(t[i].y));
+        A.Set(5,j,1);
+        A.Set(6,j, static_cast<double>(-t[i].x*s[i].y));
+        A.Set(7, j,static_cast<double>(-t[i].y*s[i].y));
+        b.Set(0,j, static_cast<double>(s[i].y));
         j++;
     }
     Mat h (1,8);
@@ -360,7 +375,7 @@ void nfFindHomoMatrix(nfFloat2D s[4], nfFloat2D t[4], float hcoef[3][3])
     if(A.FindInverse(AI)) {
         h.Multiply(AI, b);
         for(int i=0;i<8;i++)
-            hcoef[i/3][i%3] = 	h.Get(0,i);
+            hcoef[i/3][i%3] = 	static_cast<float>(h.Get(0,i));
         hcoef[2][2] = 1;
 
     }else {
@@ -387,6 +402,27 @@ void nfCalculateHomoMatrix4(nfFloat2D* fps, nfFloat2D* fpt, HomoParam* homo)
 
     for(int i=0; i<4; i++) {
         nfFindHomoMatrix(s[i],t[i], homo[i].h);
+    }
+
+}
+/*<! 10-regions, 18feature points indexing , each rect is clock-wised numbering
+ *   0 -------- 1 -------- 2 -------- 3 ---------4 ---------5
+ *   | region 0 | region 1 | region 2 | region 3 |    4     |
+ *   6 -------- 7 -------- 8 -------- 9 -------- 10 --------11
+ *   | region 5 | region 6 | region 7 | region 8 |    9    |
+ *   12 ------- 13 -------14 --------15-------- 16-------- 17
+ **/
+void nfCalculateHomoMatrix10(nfFloat2D* fps, nfFloat2D* fpt, HomoParam* homo)
+{
+    int k[10][4] = {
+        {0,1,7,6},{1,2,8,7},{2,3,9,8},{3,4,10,9},{4,5,11,10},
+        {6,7,13,12},{7,8,14,13}, {8,9,15,14}, {9,10,16,15},{10,11,17,16},
+    };
+
+    for(int i=0; i<10; i++) {
+        nfFloat2D s[4] = {fps[k[i][0]],fps[k[i][1]], fps[k[i][2]], fps[k[i][3]]};
+        nfFloat2D t[4] = {fpt[k[i][0]],fpt[k[i][1]], fpt[k[i][2]], fpt[k[i][3]]};
+        nfFindHomoMatrix(s,t, homo[i].h);
     }
 
 }
@@ -430,6 +466,28 @@ void nfCalculateHomoMatrix12(nfFloat2D* fps, nfFloat2D* fpt, HomoParam* homo)
     }
 
 }
+/*<! 14-regions, 24  feature points indexing , each rect is clock-wised numbering
+ *   0 -------- 1 -------- 2 -------- 3 ---------4 ---5-- 6---7
+ *   | region 0 | region 1 | region 2 | region 3 |  4 | 5 | 6 |
+ *   8 -------- 9-------- 10-------  11 --------12----13--14--15
+ *   | region 7 | region 8 | region 9| region 10| 11 |12 |13 |
+ *   16 --------17-------- 18--------19------- 20- --21--22--23
+ **/
+void nfCalculateHomoMatrix14(nfFloat2D* fps, nfFloat2D* fpt, HomoParam* homo)
+{
+    int k[14][4] = {
+        {0,1,9,8},{1,2,10,9},{2,3,11,10},{3,4,12,11},{4,5,13,12},{5,6,14,13},{6,7,15,14},
+        {8,9,17,16}, {9,10,18,17},{10,11,19,18},{11,12,20,19},{12,13,21,20},{13,14,22,21},{14,15,23,22}
+    };
+
+    for(int i=0; i<14; i++) {
+        nfFloat2D s[4] = {fps[k[i][0]],fps[k[i][1]], fps[k[i][2]], fps[k[i][3]]};
+        nfFloat2D t[4] = {fpt[k[i][0]],fpt[k[i][1]], fpt[k[i][2]], fpt[k[i][3]]};
+        nfFindHomoMatrix(s,t, homo[i].h);
+    }
+
+}
+
 /*<! 16-regions, 27  feature points indexing , each rect is clock-wised numbering
  *   0 -------- 1 -------- 2 -------- 3 ---------4 ---5-- 6---7---8
  *   | region 0 | region 1 | region 2 | region 3 |  4 | 5 | 6 | 7 |
@@ -445,6 +503,30 @@ void nfCalculateHomoMatrix16(nfFloat2D* fps, nfFloat2D* fpt, HomoParam* homo)
     };
 
     for(int i=0; i<16; i++) {
+        nfFloat2D s[4] = {fps[k[i][0]],fps[k[i][1]], fps[k[i][2]], fps[k[i][3]]};
+        nfFloat2D t[4] = {fpt[k[i][0]],fpt[k[i][1]], fpt[k[i][2]], fpt[k[i][3]]};
+        nfFindHomoMatrix(s,t, homo[i].h);
+    }
+
+}
+
+/*<! 20-regions, 33  feature points indexing , each rect is clock-wised numbering
+ *   0 - 1 - 2 - 3 --4 --5-- 6---7---8---9--10
+ *   | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
+ *   11--12--13--14--15--16--17--18--19--20--21
+ *   | 10| 11| 12| 13| 14| 15| 16| 17| 18| 19|
+ *   22--23--24--25--26--27--28--29--30--31--32
+ **/
+void nfCalculateHomoMatrix20(nfFloat2D* fps, nfFloat2D* fpt, HomoParam* homo)
+{
+    int k[20][4] = {
+        {0,1,12,11},{1,2,13,12},{2,3,14,13},{3,4,15,14},{4,5,16,15},
+            {5,6,17,16},{6,7,18,17},{7,8,19,18},{8,9,20,19},{9,10,21,20},
+        {11,12,23,22},{12,13,24,23},{13,14,25,24},{14,15,26,25},{15,16,27,26},
+            {16,17,28,27},{17,18,29,28},{18,19,30,29},{19,20,31,30},{20,21,32,31},
+    };
+
+    for(int i=0; i<20; i++) {
         nfFloat2D s[4] = {fps[k[i][0]],fps[k[i][1]], fps[k[i][2]], fps[k[i][3]]};
         nfFloat2D t[4] = {fpt[k[i][0]],fpt[k[i][1]], fpt[k[i][2]], fpt[k[i][3]]};
         nfFindHomoMatrix(s,t, homo[i].h);
@@ -474,7 +556,7 @@ bool    LoadFecParam(FecParam* pFecParam, int nArea, void* iniFile)
         pFecParam->ptCenter.x = 0.5;
         pFecParam->ptCenter.y = 0.5;
     }
-    pFecParam->fov = GetProfileFloat(section, "fov", (170.0* M_PI/180.0), iniFile);
+    pFecParam->fov = GetProfileFloat(section, "fov", static_cast<float>((170.0* M_PI/180.0)), iniFile);
     pFecParam->k1 = GetProfileFloat(section, "k1", -8.0, iniFile);
     pFecParam->k2 = GetProfileFloat(section, "k2", 0.0, iniFile);
     pFecParam->a = GetProfileFloat(section, "a", 1.0, iniFile);
@@ -510,7 +592,6 @@ bool    LoadHomoParam(HomoParam* pParam, int nArea, int nFp, void* iniFile)
 }
 bool    LoadAreaSettings(AreaSettings* pParam, int nArea, void* iniFile, bool bDeployment)
 {
-
     char section[32];
     sprintf(section, "area_%d", nArea);
     if(!GetProfileRectFloat(section, "range", &pParam->range, iniFile)){
@@ -518,7 +599,8 @@ bool    LoadAreaSettings(AreaSettings* pParam, int nArea, void* iniFile, bool bD
     }
     pParam->nFpCounts = GetProfileInt(section, "fp_counts", 4, iniFile);
     if (pParam->nFpCounts > FP_COUNTS){
-        fprintf(stderr, "[%s] fp_counts error!\n", section);
+        fprintf(stderr, "[%s] fp_counts error! Maximum FP counts are %d, but we have %d counts.\n", section,
+                FP_COUNTS, pParam->nFpCounts);
         return false;
     }
 
@@ -548,7 +630,7 @@ bool    LoadAreaSettings(AreaSettings* pParam, int nArea, void* iniFile, bool bD
 
     pParam->nFpAreaCounts = GetProfileInt(section, "fp_regions", 4, iniFile);
     if (pParam->nFpAreaCounts > MAX_FP_AREA){
-        fprintf(stderr, "[%s] fp_regions error!\n", section);
+        fprintf(stderr, "[%s] fp_regions error! Maximum FP regions are %d, but we have %d counts.\n", section, MAX_FP_AREA, pParam->nFpAreaCounts);
         return false;
     }
     for (int i=0; i< pParam->nFpAreaCounts; i++) {
@@ -653,15 +735,17 @@ bool    SaveAreaSettings(AreaSettings* pParam, int nArea, void* iniFile)
 nfImage* TexProcess::getSourceImage()
 {
      if(!mpSourceImageName)
-         return NULL;
+         return nullptr;
 
      char value[32];
-     const char* p1 = strchr(mpSourceImageName, '_');
-     const char* p2 = strchr(mpSourceImageName, '.');
-     int length = p2-p1-1;
-     if (p1 == NULL || p2 == NULL || length <3 || length>= (int) sizeof(value)-1){
+     char* p1 = strchr(mpSourceImageName, '_');
+     char* p2 = strchr(mpSourceImageName, '.');
+     bool isYuvFile = (strcmp(".yuv", p2) == 0);
+
+     unsigned long length = static_cast<unsigned long>(p2-p1-1);
+     if (p1 == nullptr || p2 == nullptr || length <3 || length>= sizeof(value)-1){
          LOGE("Wrong file format");
-         return NULL;
+         return nullptr;
      }
 
      memcpy(value, p1+1, length);
@@ -669,41 +753,57 @@ nfImage* TexProcess::getSourceImage()
      p1 = strchr(value, 'x');
      if (!p1) {
          LOGE("File name must be in the form of abc_widthxheight.yuv!");
-         return NULL;
+         return nullptr;
      }
-     *(char*) p1 = 0;
+     *static_cast<char*>(p1) = 0;
 
-     int width = atoi(value);
-     int height = atoi(p1+1);
+     unsigned int width = static_cast<unsigned int>(atoi(value));
+     unsigned int height = static_cast<unsigned int>(atoi(p1+1));
+
      FILE* pFile = fopen(mpSourceImageName, "r");
      if (!pFile) {
          LOGE("Failed to open image %s!", mpSourceImageName);
-         return NULL;
+         return nullptr;
      }
-     nfImage* pYuv = nfImage::create(width, height, 2);
-     if (! pYuv){
-         LOGE("YUYV: Out of memory!\n");
-         fclose(pFile);
-         return NULL;
-     }
-     //read file to pYuv
-     if( fread(pYuv->buffer, 1, width*height*2, pFile)<= 0) {
-         LOGE("Failed to load image file %s!\n", mpSourceImageName);
-         nfImage::destroy(&pYuv);
-         fclose(pFile);
-         return NULL;
-     }
-     fclose(pFile);
-
      nfImage* pRgb = nfImage::create(width, height, 4);
      if (! pRgb){
          LOGE("Out of memory!\n");
-         nfImage::destroy(&pYuv);
-         return NULL;
+         fclose(pFile);
+         return nullptr;
      }
 
-     nfYuyvToRgb32(pYuv, pRgb->buffer, true, false);
-     nfImage::destroy(&pYuv);
+    if (isYuvFile) {
+        nfImage* pYuv = nfImage::create(width, height, 2);
+        if (! pYuv){
+            LOGE("YUYV: Out of memory!\n");
+            nfImage::destroy(&pRgb);
+            fclose(pFile);
+            return nullptr;
+        }
+        //read file to pYuv
+        if( fread(pYuv->buffer, 1, width*height*2, pFile)<= 0) {
+            LOGE("Failed to load image file %s!\n", mpSourceImageName);
+            nfImage::destroy(&pYuv);
+            nfImage::destroy(&pRgb);
+            fclose(pFile);
+            return nullptr;
+        }
+        nfYuyvToRgb32(pYuv, pRgb->buffer, true, false);
+        nfImage::destroy(&pYuv);
+    } else {
+        if( fread(pRgb->buffer, 1, width*height*4, pFile)<= 0) {
+            LOGE("Failed to load image file %s!\n", mpSourceImageName);
+            nfImage::destroy(&pRgb);
+            fclose(pFile);
+            return nullptr;
+        }
+        //force channel Alpha to 0xff
+        //force chanel A to 0xff
+        for(unsigned int i=0; i< width*4*height; i+=4){
+            *(pRgb->buffer + i+3) = 0xff;
+        }
+    }
+    fclose(pFile);
     return pRgb;
 }
 
@@ -711,12 +811,12 @@ nfImage* TexProcess::getSourceImage()
 bool TexProcess::loadIniFile(const char* filename)
 {
     int i ;
-    bool bOK;
+    bool bOK = true;
     char sourceImg[256];
 
     if(mpSourceImageName){
         free (mpSourceImageName);
-        mpSourceImageName = NULL;
+        mpSourceImageName = nullptr;
     }
     void* handle  = openIniFile(filename, true);
     if(!handle)
@@ -738,12 +838,10 @@ bool TexProcess::loadIniFile(const char* filename)
 bool TexProcess::loadIniFile2(const char* filename)
 {
     int i ;
-    bool bOK;
-    char sourceImg[256];
-
+    bool bOK =true;
     if(mpSourceImageName){
         free (mpSourceImageName);
-        mpSourceImageName = NULL;
+        mpSourceImageName = nullptr;
     }
     void* handle  = openIniFile(filename, true);
     if(!handle)
@@ -761,7 +859,7 @@ bool TexProcess::loadIniFile2(const char* filename)
 bool TexProcess::saveIniFile(const char* filename)
 {
     int i ;
-    bool bOK;
+    bool bOK = true;
     void* handle  = openIniFile(filename, false);
     if(!handle)
         return false;
@@ -782,8 +880,8 @@ void TexProcess::normalizeFpf(int nAreaId)
     if (mAreaSettings[nAreaId].fpf[3].x > 2 || mAreaSettings[nAreaId].fpf[3].y > 2)
     { //normalize to [0,1]
         for (int i=0; i<mAreaSettings[nAreaId].nFpCounts; i++){
-            mAreaSettings[nAreaId].fpf[i].x /= (float)(IMAGE_WIDTH/2);
-            mAreaSettings[nAreaId].fpf[i].y /= (float)(IMAGE_HEIGHT/2);
+            mAreaSettings[nAreaId].fpf[i].x /= static_cast<float>(IMAGE_WIDTH/2);
+            mAreaSettings[nAreaId].fpf[i].y /= static_cast<float>(IMAGE_HEIGHT/2);
         }
     }
     mAreaSettings[nAreaId].state = DATA_STATE_FPF;
@@ -799,7 +897,14 @@ void TexProcess::calculateFps(int nAreaId)
 }
 void TexProcess::calculateHomo(int nAreaId)
 {
-    if(mAreaSettings[nAreaId].nFpAreaCounts == 16)
+    if(mAreaSettings[nAreaId].nFpAreaCounts == 14)
+        nfCalculateHomoMatrix14(mAreaSettings[nAreaId].fps, mAreaSettings[nAreaId].fpt, mAreaSettings[nAreaId].homo);
+    else if(mAreaSettings[nAreaId].nFpAreaCounts == 10)
+        nfCalculateHomoMatrix10(mAreaSettings[nAreaId].fps, mAreaSettings[nAreaId].fpt, mAreaSettings[nAreaId].homo);
+
+    else if(mAreaSettings[nAreaId].nFpAreaCounts == 20)
+        nfCalculateHomoMatrix20(mAreaSettings[nAreaId].fps, mAreaSettings[nAreaId].fpt, mAreaSettings[nAreaId].homo);
+    else if(mAreaSettings[nAreaId].nFpAreaCounts == 16)
         nfCalculateHomoMatrix16(mAreaSettings[nAreaId].fps, mAreaSettings[nAreaId].fpt, mAreaSettings[nAreaId].homo);
     else if (mAreaSettings[nAreaId].nFpAreaCounts == 12)
         nfCalculateHomoMatrix12(mAreaSettings[nAreaId].fps, mAreaSettings[nAreaId].fpt, mAreaSettings[nAreaId].homo);
@@ -809,7 +914,7 @@ void TexProcess::calculateHomo(int nAreaId)
     mAreaSettings[nAreaId].state = DATA_STATE_HOMO;
 
 }
-TexProcess::TexProcess():mpSourceImageName(NULL)
+TexProcess::TexProcess():mpSourceImageName(nullptr)
 {
     for (int m=0; m< MAX_CAMERAS; m++) {
         for(int k=0; k<MAX_FP_AREA; k++)
@@ -834,7 +939,10 @@ TexProcess::TexProcess():mpSourceImageName(NULL)
 bool TexProcess::update()
 {
     for (int m=0; m< MAX_CAMERAS; m++) {
-        if (mAreaSettings[m].nFpAreaCounts == 16){
+        if (mAreaSettings[m].nFpAreaCounts == 20){
+            nfCalculateHomoMatrix20(mAreaSettings[m].fps, mAreaSettings[m].fpt, mAreaSettings[m].homo);
+        }
+        else if (mAreaSettings[m].nFpAreaCounts == 16){
             nfCalculateHomoMatrix16(mAreaSettings[m].fps, mAreaSettings[m].fpt, mAreaSettings[m].homo);
         }
         else if(mAreaSettings[m].nFpAreaCounts == 12){
@@ -869,9 +977,9 @@ void TexProcess::initVertices(vector<nfFloat3D> & vert, nfRectF region)
     nfFloat3D v;
 
     for (i=0; i<= Y_INTV; i++) {
-        t = (region.b - region.t)*(float)i/(float)Y_INTV + region.t;
+        t = (region.b - region.t)*static_cast<float>(i)/static_cast<float>(Y_INTV) + region.t;
         for (j=0; j<=X_INTV; j++) {
-            s = (region.r - region.l)*(float)j/(float)X_INTV + region.l;
+            s = (region.r - region.l)* static_cast<float>(j)/static_cast<float>(X_INTV) + region.l;
             v.y = 0;
             v.z = TZ_CENTER-t*TZ_SCALEUP;
 #ifdef HORZ_MIRROR
@@ -913,10 +1021,11 @@ int TexProcess::reloadIndices(vector<unsigned short>& indices)
 
 void TexProcess::updateIndices(vector<unsigned short>& indices, int nCam, int nRegion)
 {
-    int i, j,k;
+    int i, j;
+    unsigned short k;
     int startIndex = (nCam*MAX_FP_AREA + nRegion)*(Y_INTV+1)*(X_INTV+1);
     for (i=0; i< Y_INTV; i++) {
-        k = startIndex + i*(X_INTV+1);
+        k = static_cast<unsigned short>(startIndex + i*(X_INTV+1));
         for(j=0; j<X_INTV; j++) {
 #ifdef HORZ_MIRROR
             indices.push_back(k);
@@ -963,21 +1072,18 @@ int TexProcess::updateUv(vector <nfFloat2D> &uv)
             float s,t,u,v,x,y;
             nfRectF region = mAreaSettings[m].region[k];
             for (i=0; i<= Y_INTV; i++) {
-                t = (region.b - region.t)*(float)i/(float)Y_INTV + region.t;
+                t = (region.b - region.t)* static_cast<float>(i)/static_cast<float>(Y_INTV) + region.t;
                 for (j=0; j<=X_INTV; j++) {
-                    s = (region.r - region.l)*(float)j/(float)X_INTV + region.l;
+                    s = (region.r - region.l)*static_cast<float>(j)/static_cast<float>(X_INTV) + region.l;
                     if (nfDoHomoTransform(s,t,u,v, mAreaSettings[m].homo[k].h)) {
                         nfDoFec(u,v,x,y, &mAreaSettings[m].fec);
                         value.x = (x*0.5f+ s_offsetCam[m].x);
                         value.y = y*0.5f+ s_offsetCam[m].y;
-
                         //
                     }else{
                         value.x=value.y=0.5;
                     }
                     //
-
-
                     uv.push_back(value);
                 }
             }
@@ -1008,9 +1114,9 @@ int TexProcess::updateUvNoFisheye(vector <nfFloat2D> &uv)
             float s,t, u,v,x,y;
             nfRectF region = mAreaSettings[m].region[k];
             for (i=0; i<= Y_INTV; i++) {
-                t = (region.b - region.t)*(float)i/(float)Y_INTV + region.t;
+                t = (region.b - region.t)*static_cast<float>(i)/static_cast<float>(Y_INTV) + region.t;
                 for (j=0; j<=X_INTV; j++) {
-                    s = (region.r - region.l)*(float)j/(float)X_INTV+region.l;
+                    s = (region.r - region.l)*static_cast<float>(j)/static_cast<float>(X_INTV)+region.l;
 
                     u = (s - area.l )/ (area.r - area.l);
                     v = (t- area.t)/(area.b - area.t);
@@ -1018,8 +1124,6 @@ int TexProcess::updateUvNoFisheye(vector <nfFloat2D> &uv)
                     y = rotc[m]*u + rotd[m]*v + ty[m];
                     value.x = (x*0.5f+ s_offsetCam[m].x);
                     value.y = y*0.4f*0.5f+ s_offsetCam[m].y+0.3f; //take 0.2 to 0.6 of height in camera
-
-
                     //
                     uv.push_back(value);
                 }
@@ -1027,7 +1131,6 @@ int TexProcess::updateUvNoFisheye(vector <nfFloat2D> &uv)
             ////---- end of one region
         }
     }
-
     return 0;
 }
 

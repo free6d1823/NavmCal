@@ -83,9 +83,8 @@ public:
     enum EditMode {
         EM_NONE = 0,
         EM_ROI = 1,
-        EM_MANUAL = 2,
-        EM_AUTO = 3,
-        EM_LINK = 4
+        EM_SET_FP = 2,
+        EM_LINK = 3
     };
 public slots:
     void onCamera0();
@@ -93,10 +92,11 @@ public slots:
     void onCamera2();
     void onCamera3();
     void onShowFp(bool show);
-    void onAutoMode();
+    void onAutoFpDetect();
     void onRoiMode();
     void onManualMode();
     void onLinkMode();
+    void onAutoLink();
     void onAccept();
     void onReset();
     void setThreshold(int value);
@@ -150,6 +150,7 @@ public slots:
     void onShowFp(bool show);
     void onShowGrideLines(bool show);
     void onApplyFec();
+    void onClearGrideLines();
 private:
     void loadCamera(int cam);
     void createUi();

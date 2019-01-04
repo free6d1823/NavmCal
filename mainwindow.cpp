@@ -88,11 +88,10 @@ bool MainWindow::loadFile(const QString &fileName)
 
     }
     if (gpInputImage)
-    {
-        nfImage::destroy(&gpInputImage);
+    {   //QImage owns the buffer data, so we don't need to free the buffer while delete the object
+        nfImage::dettach(&gpInputImage);
     }
-    gpInputImage = pImg;
-
+    gpInputImage =  pImg;
 
     setWindowFilePath(fileName);
     if (gpInputImage) {

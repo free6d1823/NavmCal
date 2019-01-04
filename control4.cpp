@@ -58,7 +58,7 @@ void Control4::start()
     gpMainWin->changeView(mPanelTypeId);
     gpMainWin->sendMessage(MESSAGE_VIEW_DO_STITCHING, 0);
     gpMainWin->sendMessage(MESSAGE_VIEW_SCALE_1000IMAGE,
-                            (long)(gpMainWin->getCurrentZoomFactor()*1000.0));
+                            static_cast<long>(gpMainWin->getCurrentZoomFactor()*1000.0));
 
 
 

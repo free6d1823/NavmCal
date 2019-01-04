@@ -14,7 +14,7 @@
  */
 HomoView::HomoView(QWidget *parent) : ImageWin(parent),
     mShowFp(false),mShowGrideLines(false),
-    mpSourceImage(NULL)
+    mpSourceImage(nullptr)
 {
     mCamId = 0;
     mViewType = 3;
@@ -34,31 +34,31 @@ void HomoView::setImage(nfImage* pSource)
     setVisible(true);
 }
 
-static void applyAll(int camId, nfPByte pSrc, int width, int inStride,  int height,
-                       nfPByte pTar, int outWidth, int OutHeight, int outStride)
+static void applyAll(int camId, nfPByte pSrc, unsigned int width, unsigned int inStride,  unsigned int height,
+                       nfPByte pTar, unsigned int outWidth, unsigned int OutHeight, unsigned int outStride)
 {
 
     AreaSettings* pAs = & gpTexProcess->mAreaSettings[camId];
 
     float x,y,u,v;
-    int nX, nY;
+    unsigned int nX, nY;
 
     for (int k=0; k< pAs->nFpAreaCounts; k++) {
         QRect region; //target region
-        region.setLeft((int)(pAs->region[k].l * outWidth));
-        region.setRight((int)(pAs->region[k].r * outWidth));
-        region.setTop((int)(pAs->region[k].t * OutHeight));
-        region.setBottom((int)(pAs->region[k].b * OutHeight));
-        for(int i=region.top();i<region.bottom(); i++) {
-            float t = (float)i/(float)OutHeight;
-            for(int j=region.left(); j<region.right(); j++) {
-                float s = (float)j/(float)outWidth; //normalized coordingnates
+        region.setLeft(static_cast<int>(pAs->region[k].l * outWidth));
+        region.setRight(static_cast<int>(pAs->region[k].r * outWidth));
+        region.setTop(static_cast<int>(pAs->region[k].t * OutHeight));
+        region.setBottom(static_cast<int>(pAs->region[k].b * OutHeight));
+        for(unsigned int i=static_cast<unsigned int> (region.top()) ;i< static_cast<unsigned int> (region.bottom()); i++) {
+            float t = static_cast<float>(i)/static_cast<float>(OutHeight);
+            for(unsigned int j= static_cast<unsigned int> (region.left()); j<static_cast<unsigned int> (region.right()); j++) {
+                float s = static_cast<float>(j)/static_cast<float>(outWidth); //normalized coordingnates
 
                 if (nfDoHomoTransform(s,t,u,v, pAs->homo[k].h)) {
                     nfDoFec(u,v,x,y, &pAs->fec);
                     if ( x>=0 && x<1 && y>=0 && y< 1){
-                        nX = (int) (x * (float) width+0.5);
-                        nY = (int) (y * (float) height+0.5);
+                        nX = static_cast<unsigned int>(x * static_cast<float>(width+0.5));
+                        nY = static_cast<unsigned int>(y * static_cast<float>( height+0.5));
 
                         pTar[i*outStride + j*4  ] = pSrc[nY*inStride+nX*4  ];//B
                         pTar[i*outStride + j*4+1] = pSrc[nY*inStride+nX*4+1];//G
@@ -80,7 +80,7 @@ static void applyAll(int camId, nfPByte pSrc, int width, int inStride,  int heig
 void HomoView::udateImage()
 {
 
-    nfPByte pOutBuffer = (nfPByte)malloc(HOMO_IMAGE_WIDTH*HOMO_IMAGE_HEIGHT*4);
+    nfPByte pOutBuffer = static_cast<nfPByte>(malloc(HOMO_IMAGE_WIDTH*HOMO_IMAGE_HEIGHT*4));
     memset(pOutBuffer, 0, HOMO_IMAGE_WIDTH*HOMO_IMAGE_HEIGHT*4);
     if (gpTexProcess->getDataState(mCamId) < DATA_STATE_FPF){
         gpTexProcess->normalizeFpf(mCamId);
@@ -90,7 +90,7 @@ void HomoView::udateImage()
     }
 
     gpTexProcess->calculateHomo(mCamId);
-    applyAll(mCamId, mpSourceImage->buffer, mpSourceImage->width, mpSourceImage->stride,
+    applyAll(mCamId, mpSourceImage->buffer,  mpSourceImage->width, mpSourceImage->stride,
             mpSourceImage->height, pOutBuffer, HOMO_IMAGE_WIDTH, HOMO_IMAGE_HEIGHT, HOMO_IMAGE_WIDTH*4);
 
     mImage = QImage(pOutBuffer,HOMO_IMAGE_WIDTH, HOMO_IMAGE_HEIGHT, QImage::Format_RGBA8888);
@@ -103,10 +103,10 @@ void HomoView::processMessage(unsigned int command, long data)
 {
     switch (command) {
     case MESSAGE_VIEW_SCALE_1000IMAGE:
-        scaleImage(((double)data)/1000);
+        scaleImage((static_cast<double>(data))/1000.0);
         break;
     case MESSAGE_VIEW_SET_CAMERAID:
-        mCamId = (int ) data;
+        mCamId = static_cast<int>(data);
         udateImage();
         if(mShowFp)
             loadFps();
@@ -167,10 +167,10 @@ void HomoView::onPostDraw(QPainter* painter)
         painter->setPen(pen1);
         QRectF r;
         for (unsigned int i=0; i<mRegionList.size(); i++){
-            r.setLeft(mRegionList[i].l* rcTarget.width());
-            r.setTop(mRegionList[i].t* rcTarget.width());
-            r.setRight(mRegionList[i].r* rcTarget.width());
-            r.setBottom(mRegionList[i].b* rcTarget.width());
+            r.setLeft(static_cast<double>(mRegionList[i].l)* rcTarget.width());
+            r.setTop(static_cast<double>(mRegionList[i].t)* rcTarget.width());
+            r.setRight(static_cast<double>(mRegionList[i].r)* rcTarget.width());
+            r.setBottom(static_cast<double>(mRegionList[i].b)* rcTarget.width());
 
             painter->drawRect(r);
         }
@@ -179,8 +179,8 @@ void HomoView::onPostDraw(QPainter* painter)
         vector <QPointF> fps;
         QPointF pt;
         for (unsigned int i=0; i<mFpsList.size(); i++){
-            pt.setX(mFpsList[i].x* rcTarget.width());
-            pt.setY(mFpsList[i].y* rcTarget.height());
+            pt.setX(static_cast<double>(mFpsList[i].x)* rcTarget.width());
+            pt.setY(static_cast<double>(mFpsList[i].y)* rcTarget.height());
             fps.push_back(pt);
         }
         QPen pen1;
@@ -232,7 +232,7 @@ void AllView::processMessage(unsigned int command, long data)
         udateImage();
         break;
     case MESSAGE_VIEW_SCALE_1000IMAGE:
-        scaleImage(((double)data)/1000);
+        scaleImage(static_cast<double>(data)/1000.0);
         break;
     case MESSAGE_VIEW_SHOW_FEATUREPOINTS:
         if(data == 0) {
@@ -243,7 +243,7 @@ void AllView::processMessage(unsigned int command, long data)
         mImageLabel->update();
         break;
     case MESSAGE_VIEW_STEER_CHANGED100:
-        mSteerWheelAngle = ((float)data*M_PI/18000);
+        mSteerWheelAngle = (static_cast<double>(data)*M_PI/18000.0);
         mImageLabel->update();
         break;
     }
@@ -257,10 +257,10 @@ extern nfImage* gpInputImage;
 static nfImage* RefImagebyArea(int nCamId)
 {
     if(!gpInputImage)
-        return NULL;
+        return nullptr;
     unsigned char* pIn;
-    int nOutWidth = gpInputImage->width/2;
-    int nOutHeight = gpInputImage->height/2;
+    unsigned int nOutWidth = gpInputImage->width/2;
+    unsigned int nOutHeight = gpInputImage->height/2;
 
     switch (nCamId) {
     case 0:
@@ -314,16 +314,16 @@ void AllView::udateImage()
     mImageLabel->setPixmap(QPixmap::fromImage(mImage));
     mImageLabel->update();*/
 }
-QPointF doTransform(QPointF p, QPointF ct, float ang)
+QPointF doTransform(QPointF p, QPointF ct, double ang)
 {
-    float px = p.x()- ct.x();
-    float py = p.y() - ct.y();
-    float tx, ty;
+    double px = p.x()- ct.x();
+    double py = p.y() - ct.y();
+    double tx, ty;
     tx = px * cos(ang) - py* sin(ang) + ct.x();
     ty = px * sin(ang) + py*cos(ang) + ct.y();
     return QPointF(tx,ty);
 }
-QPolygonF AllView::findTrack(QRectF car, float angle)
+QPolygonF AllView::findTrack(QRectF car, double angle)
 {
     /* CAR parameters
      *  |-      O          O    -|
@@ -332,15 +332,15 @@ QPolygonF AllView::findTrack(QRectF car, float angle)
      *  |       |          |     |
      *  |_      O          O    _|
      */
-#define a 0.1862f
-#define b 0.5967f
-#define c 0.2171f
-    float d = (float) car.width();
-    float R1 = abs((float)b/(float) tan(mSteerWheelAngle) )* (float)car.height();
-    float xCarOrg = car.left() + d/2;
-    float yCarOrg = car.top()+ b* car.height();
+#define a 0.1862
+#define b 0.5967
+#define c 0.2171
+    double d = car.width();
+    double R1 = abs(b/tan( mSteerWheelAngle) )* car.height();
+    double xCarOrg = car.left() + d/2;
+    double yCarOrg = car.top()+ b* car.height();
     QPointF center;
-    float xRCenter;
+
     if(mSteerWheelAngle > 0){
         center.setX(xCarOrg+ R1);
         angle = -angle;
@@ -362,6 +362,50 @@ QPolygonF AllView::findTrack(QRectF car, float angle)
 
     return newCar;
 }
+//////
+/// \brief AllView::findTrack2
+/// \param car dimension in pixel
+/// \param dist1 distance, in pixel, of the start line after bumper
+/// \param dist2 distance, in pixel, of the end line after bumper
+/// \return the polyline of the track (p0~p7)
+///     p0--p1--p2--p3
+/// +--dist1---dist2|
+///     p7--p6--p5--p4
+QPolygonF AllView::findTrack2(QRectF car, double dist1, double dist2)
+{
+#define a 0.1862
+#define b 0.5967
+#define c 0.2171
+    double d = car.width();
+    double R1 = abs(b/tan( mSteerWheelAngle) )* car.height();
+    double xCarOrg = car.left() + d/2;
+    double yCarOrg = car.top()+ b* car.height();
+    QPointF center;
+    QPolygonF track;
+    if(mSteerWheelAngle > 0)
+        R1 = -R1;
+    center.setX(xCarOrg-R1);
+    center.setX(xCarOrg- R1);
+    center.setY(yCarOrg);
+
+
+    double angle[4];
+    //1. first line
+    angle[0] = dist1/R1;
+    angle[3] = dist2/R1;
+    angle[1] = (angle[0]*2+angle[3])/3;
+    angle[2] = (angle[0]+angle[3]*2)/3;
+    QPointF p;
+    for(int i=0;i<4;i++) {
+        p = doTransform(car.bottomRight(), center,  angle[i]);
+        track.append(p); //p0~p3
+    }
+    for(int i=3;i>=0;i--) {
+        p = doTransform(car.bottomLeft(), center,  angle[i]);
+        track.append(p); //p4~p7
+    }
+    return track;
+}
 
 void AllView::onPostDraw(QPainter* painter)
 {
@@ -369,17 +413,31 @@ void AllView::onPostDraw(QPainter* painter)
     QRectF rcCar;
     rcCar.setRect(rcTarget.width()*0.4, rcTarget.height()*0.23, rcTarget.width()*.2, rcTarget.height()*.5);
 
-    if (mSteerWheelAngle != 0) {
+    if (mSteerWheelAngle != 0.0) {
         QPen pen1;
         pen1.setWidth(TRACK_WIDTH);
-        pen1.setColor(TRACK_COLOR);
+        pen1.setColor(TRACK_COLOR1);
         painter->setPen(pen1);
+        QPolygonF rcShadow1 = findTrack2(rcCar, rcCar.width()*5/170, rcCar.width()*50/170);//50cm
+        painter->drawPolyline(rcShadow1);
 
+        pen1.setColor(TRACK_COLOR2);
+        painter->setPen(pen1);
+        QPolygonF rcShadow2 = findTrack2(rcCar, rcCar.width()*55/170, rcCar.width()*100/170);//100cm
+        painter->drawPolyline(rcShadow2);
+
+        pen1.setColor(TRACK_COLOR3);
+        painter->setPen(pen1);
+        QPolygonF rcShadow3 = findTrack2(rcCar, rcCar.width()*105/170, rcCar.width()*300/170);//300cm
+        painter->drawPolyline(rcShadow3);
+
+/*
         for (float i = -60; i <60; i+=4)
         {
-            QPolygonF rcShadow = findTrack(rcCar, -i*M_PI/180);
+            QPolygonF rcShadow = findTrack(rcCar, -i*M_PI/180.0);
             painter->drawPolyline(rcShadow);
         }
+*/
     }
 
     if( mShowCar) {

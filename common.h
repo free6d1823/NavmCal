@@ -12,9 +12,9 @@
 #endif
 
 #define MAX_CAMERAS 4   /*<! numbers of cameras, or number of separated area, in AVM */
-#define MAX_FP_AREA 16   /*<! number of feature points region in a camera area */
+#define MAX_FP_AREA 20   /*<! number of feature points region in a camera area */
 /*!<numbersof total FP in a camera area*/
-#define FP_COUNTS			30
+#define FP_COUNTS			33
 
 
 /*<! basic data type re-definition */
@@ -112,12 +112,16 @@ extern nfImage* gpInputImage;
 #define MESSAGE_VIEW_SET_ROI_MODE   0x1001
 #define MESSAGE_VIEW_SET_MANUAL_MODE   0x1002
 /* inform SingleView to in AutoDetection Feature Points mode, pData = threshold*/
-#define MESSAGE_VIEW_SET_AUTO_MODE   0x1003
+#define MESSAGE_VIEW_DO_AUTO_DETECT_FP   0x1003
 #define MESSAGE_VIEW_SET_LINK_MODE   0x1004
+/* request SingleView to perform Auto Link */
+#define MESSAGE_VIEW_DO_AUTO_LINK   0x1005
 /* inform SingleView to write current UI to settings */
-#define MESSAGE_VIEW_DO_ACCEPT   0x1005
+#define MESSAGE_VIEW_DO_ACCEPT   0x1006
 /* inform SingleView to clear all feature points */
-#define MESSAGE_VIEW_DO_RESET   0x1006
+#define MESSAGE_VIEW_DO_RESET   0x1007
+/* inform FecView to clear all gride lines */
+#define MESSAGE_VIEW_CLEAR_GRIDELINES   0x1008
 
 
 /* request FecView to apply new FEC parameters from setrtings, pData don't care */

@@ -14,8 +14,9 @@ Control1::Control1(TYPE id,QWidget *parent) :
     updateUi();
     ui->btnRoi->setEnabled(false);
     ui->btnManual->setEnabled(false);
-    ui->btnAuto->setEnabled(false);
+    ui->btnAutoDetect->setEnabled(false);
     ui->btnLink->setEnabled(false);
+    ui->btnAutoLink->setEnabled(false);
     ui->sliderThreshold->setEnabled(false);
     ui->btnAccept->setEnabled(false);
     ui->btnReset->setEnabled(false);
@@ -33,10 +34,11 @@ void Control1::createUi()
     connect(ui->rearCam, SIGNAL(clicked()), SLOT(onCamera2()));
     connect(ui->leftCam, SIGNAL(clicked()), SLOT(onCamera3()));
     connect(ui->checkBox, SIGNAL(toggled(bool)), SLOT(onShowFp(bool)));
-    connect(ui->btnAuto, SIGNAL(clicked()), SLOT(onAutoMode()));
+    connect(ui->btnAutoDetect, SIGNAL(clicked()), SLOT(onAutoFpDetect()));
     connect(ui->btnRoi , SIGNAL(clicked()), SLOT(onRoiMode()));
     connect(ui->btnManual , SIGNAL(clicked()), SLOT(onManualMode()));
     connect(ui->btnLink , SIGNAL(clicked()), SLOT(onLinkMode()));
+    connect(ui->btnAutoLink , SIGNAL(clicked()), SLOT(onAutoLink()));
     connect(ui->btnAccept , SIGNAL(clicked()), SLOT(onAccept()));
     connect(ui->btnReset , SIGNAL(clicked()), SLOT(onReset()));
     connect(ui->sliderThreshold, SIGNAL(valueChanged(int)),
@@ -47,10 +49,11 @@ void Control1::createUi()
 void Control1::updateUi()
 {
         ui->btnRoi->setChecked(mEditMode == EM_ROI);
-        ui->btnAuto->setChecked(mEditMode == EM_AUTO);
-        ui->btnManual->setChecked(mEditMode == EM_MANUAL);
-        ui->btnLink->setChecked(mEditMode == EM_LINK);
 
+        ui->btnManual->setChecked(mEditMode == EM_SET_FP);
+        ui->btnLink->setChecked(mEditMode == EM_LINK);
+        ui->btnAutoLink->setEnabled(mEditMode == EM_LINK);
+        ui->btnAutoDetect->setEnabled(mEditMode == EM_SET_FP);
 }
 
 /*   Image location vs id :
@@ -168,26 +171,27 @@ void Control1::onShowFp(bool show)
         mEditMode = EM_NONE;
         ui->btnRoi->setEnabled(false);
         ui->btnManual->setEnabled(false);
-        ui->btnAuto->setEnabled(false);
+        ui->btnAutoDetect->setEnabled(false);
         ui->btnLink->setEnabled(false);
+        ui->btnAutoLink->setEnabled(false);
         ui->sliderThreshold->setEnabled(false);
         ui->btnAccept->setEnabled(false);
         ui->btnReset->setEnabled(false);
     }else {
         ui->btnRoi->setEnabled(true);
         ui->btnManual->setEnabled(true);
-        ui->btnAuto->setEnabled(true);
+        ui->btnAutoDetect->setEnabled(true);
         ui->btnLink->setEnabled(true);
+        ui->btnAutoLink->setEnabled(true);
         ui->sliderThreshold->setEnabled(true);
         ui->btnAccept->setEnabled(true);
         ui->btnReset->setEnabled(true);
     }
     updateUi();
 }
-void Control1::onAutoMode()
+void Control1::onAutoFpDetect()
 {
-    mEditMode = EM_AUTO;
-    gpMainWin->sendMessage(MESSAGE_VIEW_SET_AUTO_MODE,
+    gpMainWin->sendMessage(MESSAGE_VIEW_DO_AUTO_DETECT_FP,
                            ui->sliderThreshold->value());
     updateUi();
 }
@@ -200,7 +204,7 @@ void Control1::onRoiMode()
 }
 void Control1::onManualMode()
 {
-    mEditMode = EM_MANUAL;
+    mEditMode = EM_SET_FP;
     updateUi();
     gpMainWin->sendMessage(MESSAGE_VIEW_SET_MANUAL_MODE, 0);
 }
@@ -209,6 +213,11 @@ void Control1::onLinkMode()
     mEditMode = EM_LINK;
     updateUi();
     gpMainWin->sendMessage(MESSAGE_VIEW_SET_LINK_MODE, 0);
+}
+void Control1::onAutoLink()
+{
+    updateUi();
+    gpMainWin->sendMessage(MESSAGE_VIEW_DO_AUTO_LINK, 0);
 }
 void Control1::onAccept()
 {

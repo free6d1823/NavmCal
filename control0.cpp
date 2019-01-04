@@ -20,6 +20,7 @@ Control0::~Control0()
 ///
 void Control0::start()
 {
+    gpMainWin->changeView(mPanelTypeId);//ask MainWin to chang ImageWin
     if (gpInputImage){
         QImage* newImage = new QImage(gpInputImage->buffer,
                 gpInputImage->width, gpInputImage->height, QImage::Format_RGBA8888);
@@ -32,7 +33,6 @@ void Control0::start()
 
         gpMainWin->setImage(gpInputImage);
     }
-    gpMainWin->changeView(mPanelTypeId);
     gpMainWin->sendMessage(MESSAGE_VIEW_SCALE_1000IMAGE,
                             (long)(gpMainWin->getCurrentZoomFactor()*1000.0));
 

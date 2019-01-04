@@ -39,6 +39,7 @@ void Control2::createUi()
     connect(ui->checkShowFp, SIGNAL(toggled(bool)), SLOT(onShowFp(bool)));
     connect(ui->checkShowGrideLines, SIGNAL(toggled(bool)), SLOT(onShowGrideLines(bool)));
     connect(ui->btnApply, SIGNAL(clicked()), SLOT(onApplyFec()));
+    connect(ui->btnErase, SIGNAL(clicked()), SLOT(onClearGrideLines()));
 
 }
 
@@ -139,6 +140,10 @@ void Control2::onCamera3(){
 void Control2::onApplyFec()
 {
     gpMainWin->sendMessage(MESSAGE_VIEW_UPDATE_FEC, (long) mCamId);
+}
+void Control2::onClearGrideLines()
+{
+    gpMainWin->sendMessage(MESSAGE_VIEW_CLEAR_GRIDELINES, (long) mCamId);
 }
 
 void Control2::onFovValueChanged(double value)
